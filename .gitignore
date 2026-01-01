@@ -1,0 +1,32 @@
+# Build output
+build/
+out/
+cmake-build-*/
+CMakeUserPresets.json
+
+# Compiled objects and binaries
+*.o
+*.obj
+*.a
+*.lib
+*.exe
+*.dll
+*.pdb
+*.ilk
+
+# IDE and editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+compile_commands.json
+
+# Runtime artefacts
+profiles/
+masks/
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db
