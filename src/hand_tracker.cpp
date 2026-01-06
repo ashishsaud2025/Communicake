@@ -1,5 +1,5 @@
-#include "HandTracker.hpp"
-#include "Utilities.hpp"
+#include "communicake/hand_tracker.hpp"
+#include "communicake/utilities.hpp"
 
 HandTracker::HandTracker()
     : SENSIB(20), fingertip_to_centroid_distance(100),
