@@ -12,11 +12,19 @@ endif()
 
 find_package(OpenCV 4 REQUIRED COMPONENTS core imgproc imgcodecs videoio highgui)
 
-add_executable(communicake
-    src/main.cpp
-    src/hand_tracker.cpp
+# Vision, gesture, configuration and action logic. Deliberately free of windows,
+# cameras and platform shell calls so the tests can drive it directly.
+add_library(communicake_core STATIC
+    src/geometry.cpp
     src/utilities.cpp
 )
 
-target_include_directories(communicake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(communicake PRIVATE ${OpenCV_LIBS})
+target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(communicake_core PUBLIC ${OpenCV_LIBS})
+
+add_executable(communicake
+    src/main.cpp
+    src/hand_tracker.cpp
+)
+
+target_link_libraries(communicake PRIVATE communicake_core)
