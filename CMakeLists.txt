@@ -28,3 +28,6 @@ add_executable(communicake
 )
 
 target_link_libraries(communicake PRIVATE communicake_core)
+
+enable_testing()
+add_subdirectory(tests)
