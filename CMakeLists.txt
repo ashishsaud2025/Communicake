@@ -17,6 +17,7 @@ find_package(OpenCV 4 REQUIRED COMPONENTS core imgproc imgcodecs videoio highgui
 add_library(communicake_core STATIC
     src/geometry.cpp
     src/utilities.cpp
+    src/vision.cpp
 )
 
 target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
