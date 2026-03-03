@@ -54,4 +54,43 @@ TEST(rotated_hands_keep_their_count) {
     CHECK_EQ(countFor(synthetic::makeHand(5, synthetic::kDefaultCanvas, -12.0)), 5);
 }
 
+TEST(a_smooth_blob_is_not_a_hand) {
+    HandPipeline pipeline(testParams());
+    pipeline.setBackground(synthetic::blank());
+    const communicake::HandObservation observation = pipeline.process(synthetic::makeBlob());
+    CHECK(observation.valid);
+    CHECK_EQ(observation.fingerCount, 0);
+}
+
+TEST(speckle_is_ignored) {
+    HandPipeline pipeline(testParams());
+    pipeline.setBackground(synthetic::blank());
+    const communicake::HandObservation observation = pipeline.process(synthetic::makeSpeckle());
+    CHECK(!observation.valid);
+}
+
+TEST(an_empty_frame_is_invalid) {
+    HandPipeline pipeline(testParams());
+    const communicake::HandObservation observation = pipeline.process(cv::Mat());
+    CHECK(!observation.valid);
+    CHECK_EQ(observation.fingerCount, 0);
+}
+
+TEST(without_a_background_model_binary_mode_finds_nothing) {
+    HandPipeline pipeline(testParams());
+    const communicake::HandObservation observation = pipeline.process(synthetic::makeHand(3));
+    CHECK(!observation.valid);
+}
+
+TEST(confidence_stays_in_range) {
+    for (int fingers = 0; fingers <= 5; ++fingers) {
+        HandPipeline pipeline(testParams());
+        pipeline.setBackground(synthetic::blank());
+        const communicake::HandObservation observation =
+            pipeline.process(synthetic::makeHand(fingers));
+        CHECK(observation.confidence >= 0.0);
+        CHECK(observation.confidence <= 1.0);
+    }
+}
+
 TEST_MAIN
