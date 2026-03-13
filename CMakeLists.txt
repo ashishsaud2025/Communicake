@@ -18,6 +18,7 @@ add_library(communicake_core STATIC
     src/geometry.cpp
     src/utilities.cpp
     src/vision.cpp
+    src/gesture.cpp
 )
 
 target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
