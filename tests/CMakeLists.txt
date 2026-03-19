@@ -1,6 +1,7 @@
 set(COMMUNICAKE_TESTS
     test_geometry.cpp
     test_fingertips.cpp
+    test_stabilizer.cpp
 )
 
 foreach(test_source ${COMMUNICAKE_TESTS})
