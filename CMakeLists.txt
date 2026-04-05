@@ -20,6 +20,7 @@ add_library(communicake_core STATIC
     src/vision.cpp
     src/gesture.cpp
     src/json.cpp
+    src/config.cpp
 )
 
 target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
