@@ -3,6 +3,7 @@ set(COMMUNICAKE_TESTS
     test_fingertips.cpp
     test_stabilizer.cpp
     test_json.cpp
+    test_config.cpp
 )
 
 foreach(test_source ${COMMUNICAKE_TESTS})
