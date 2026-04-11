@@ -1,0 +1,44 @@
+{
+  "vision": {
+    "mode": "binary",
+    "binaryThreshold": 20,
+    "minContourArea": 1200,
+    "fingertipDistance": 55,
+    "minFingerGap": 34,
+    "defectDepth": 18,
+    "blurKernel": 5,
+    "roi": [10, 10, 300, 300],
+    "hsvMin": [0, 60, 60],
+    "hsvMax": [25, 255, 255]
+  },
+  "stabilizer": {
+    "requiredFrames": 5,
+    "cooldownMs": 750
+  },
+  "actions": {
+    "one": {
+      "command": "code"
+    },
+    "two": {
+      "command": "notepad",
+      "linux": "gedit",
+      "macos": "open -a TextEdit"
+    },
+    "three": {
+      "command": "xdg-open https://github.com",
+      "windows": "start \"\" https://github.com",
+      "macos": "open https://github.com"
+    },
+    "four": {
+      "command": "xterm",
+      "windows": "calc",
+      "macos": "open -a Calculator"
+    },
+    "five": {
+      "command": "xdg-open .",
+      "windows": "explorer .",
+      "macos": "open ."
+    }
+  },
+  "dryRun": false
+}
