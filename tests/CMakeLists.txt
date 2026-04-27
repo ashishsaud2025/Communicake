@@ -4,6 +4,8 @@ set(COMMUNICAKE_TESTS
     test_stabilizer.cpp
     test_json.cpp
     test_config.cpp
+    test_action.cpp
+    test_cli.cpp
 )
 
 foreach(test_source ${COMMUNICAKE_TESTS})
