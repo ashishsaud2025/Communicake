@@ -17,7 +17,12 @@ communicake_core            (static library, no UI, no OS calls)
   config.hpp                AppConfig: vision, stabilizer and action bindings
   action.hpp                ActionRunner: resolve and launch a command
   frame_source.hpp          webcam / video file / image sequence
-  app.hpp                   wiring, interactive and headless modes
+  frame_source.hpp          webcam / video file / image sequence
+  cli.hpp                   command line options
+
+communicake                 (executable)
+  app.cpp                   wiring, interactive and headless modes
+  ui.cpp                    trackbars, windows and overlays
 
 communicake                 (executable)
   main.cpp                  argument handling and start-up

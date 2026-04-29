@@ -16,24 +16,28 @@ find_package(OpenCV 4 REQUIRED COMPONENTS core imgproc imgcodecs videoio highgui
 # cameras and platform shell calls so the tests can drive it directly.
 add_library(communicake_core STATIC
     src/geometry.cpp
-    src/utilities.cpp
     src/vision.cpp
     src/gesture.cpp
     src/json.cpp
     src/config.cpp
     src/action.cpp
     src/cli.cpp
+    src/frame_source.cpp
+    src/profile.cpp
 )
 
 target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(communicake_core PUBLIC ${OpenCV_LIBS})
 
-add_executable(communicake
-    src/main.cpp
-    src/hand_tracker.cpp
+add_library(communicake_app STATIC
+    src/app.cpp
+    src/ui.cpp
 )
 
-target_link_libraries(communicake PRIVATE communicake_core)
+target_link_libraries(communicake_app PUBLIC communicake_core)
+
+add_executable(communicake src/main.cpp)
+target_link_libraries(communicake PRIVATE communicake_app)
 
 enable_testing()
 add_subdirectory(tests)

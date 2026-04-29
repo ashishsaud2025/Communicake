@@ -1,0 +1,143 @@
+#include "communicake/frame_source.hpp"
+
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/videoio.hpp>
+
+#include <algorithm>
+#include <filesystem>
+#include <system_error>
+#include <vector>
+
+namespace communicake {
+namespace {
+
+namespace fs = std::filesystem;
+
+class CaptureSource : public FrameSource {
+  public:
+    CaptureSource(cv::VideoCapture capture, bool mirror, std::string description)
+        : capture_(std::move(capture)), mirror_(mirror), description_(std::move(description)) {}
+
+    bool next(cv::Mat& frame) override {
+        if (!capture_.isOpened()) {
+            return false;
+        }
+        if (!capture_.read(frame) || frame.empty()) {
+            return false;
+        }
+        if (mirror_) {
+            cv::flip(frame, frame, 1);
+        }
+        return true;
+    }
+
+    double fps() const override {
+        const double fps = capture_.get(cv::CAP_PROP_FPS);
+        return fps > 1.0 && fps < 1000.0 ? fps : 0.0;
+    }
+
+    std::string describe() const override {
+        return description_;
+    }
+
+  private:
+    cv::VideoCapture capture_;
+    bool mirror_ = false;
+    std::string description_;
+};
+
+class ImageSequenceSource : public FrameSource {
+  public:
+    ImageSequenceSource(std::vector<std::string> files, std::string directory)
+        : files_(std::move(files)), directory_(std::move(directory)) {}
+
+    bool next(cv::Mat& frame) override {
+        while (index_ < files_.size()) {
+            frame = cv::imread(files_[index_++], cv::IMREAD_COLOR);
+            if (!frame.empty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string describe() const override {
+        return "image sequence in " + directory_ + " (" + std::to_string(files_.size()) + " frames)";
+    }
+
+  private:
+    std::vector<std::string> files_;
+    std::string directory_;
+    std::size_t index_ = 0;
+};
+
+bool hasImageExtension(const fs::path& path) {
+    std::string extension = path.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return extension == ".png" || extension == ".jpg" || extension == ".jpeg" ||
+           extension == ".bmp";
+}
+
+} // namespace
+
+double FrameSource::fps() const {
+    return 0.0;
+}
+
+bool isDirectory(const std::string& path) {
+    std::error_code error;
+    return !path.empty() && fs::is_directory(path, error);
+}
+
+std::unique_ptr<FrameSource> openWebcam(int index, int width, int height, bool mirror) {
+    cv::VideoCapture capture(index);
+    if (!capture.isOpened()) {
+#ifdef _WIN32
+        capture.open(index, cv::CAP_DSHOW);
+#endif
+    }
+    if (!capture.isOpened()) {
+        return nullptr;
+    }
+    if (width > 0) {
+        capture.set(cv::CAP_PROP_FRAME_WIDTH, width);
+    }
+    if (height > 0) {
+        capture.set(cv::CAP_PROP_FRAME_HEIGHT, height);
+    }
+    return std::make_unique<CaptureSource>(std::move(capture), mirror,
+                                           "camera " + std::to_string(index));
+}
+
+std::unique_ptr<FrameSource> openVideoFile(const std::string& path) {
+    std::error_code error;
+    if (!fs::is_regular_file(path, error)) {
+        return nullptr; // avoids a noisy backend probe for a missing file
+    }
+    cv::VideoCapture capture(path);
+    if (!capture.isOpened()) {
+        return nullptr;
+    }
+    return std::make_unique<CaptureSource>(std::move(capture), false, "video " + path);
+}
+
+std::unique_ptr<FrameSource> openImageSequence(const std::string& directory) {
+    std::error_code error;
+    if (!fs::is_directory(directory, error)) {
+        return nullptr;
+    }
+    std::vector<std::string> files;
+    for (const fs::directory_entry& entry : fs::directory_iterator(directory, error)) {
+        if (entry.is_regular_file() && hasImageExtension(entry.path())) {
+            files.push_back(entry.path().string());
+        }
+    }
+    if (files.empty()) {
+        return nullptr;
+    }
+    std::sort(files.begin(), files.end());
+    return std::make_unique<ImageSequenceSource>(std::move(files), directory);
+}
+
+} // namespace communicake
