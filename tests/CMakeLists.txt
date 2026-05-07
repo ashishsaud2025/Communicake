@@ -6,6 +6,7 @@ set(COMMUNICAKE_TESTS
     test_config.cpp
     test_action.cpp
     test_cli.cpp
+    test_app.cpp
 )
 
 foreach(test_source ${COMMUNICAKE_TESTS})
@@ -15,3 +16,6 @@ foreach(test_source ${COMMUNICAKE_TESTS})
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
+
+target_link_libraries(test_app PRIVATE communicake_app)
+
