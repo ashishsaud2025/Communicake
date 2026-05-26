@@ -38,12 +38,24 @@ class Segmenter {
     bool hasBackground() const;
 
     /// Produce an 8-bit single-channel mask for a ROI-sized BGR image.
+    ///
+    /// The returned matrix aliases an internal scratch buffer that is reused on
+    /// every call, so copy it before the next frame if it has to outlive it.
     cv::Mat segment(const cv::Mat& roiBgr) const;
 
   private:
     VisionParams params_;
     cv::Mat background_; // grayscale, ROI sized
     bool hasBackground_ = false;
+    cv::Mat kernel_; // cached morphology element
+
+    // Scratch space. Allocating a handful of Mats for every frame was the
+    // single largest source of allocator churn in the capture loop.
+    mutable cv::Mat grayBuffer_;
+    mutable cv::Mat hsvBuffer_;
+    mutable cv::Mat differenceBuffer_;
+    mutable cv::Mat scaledBackground_;
+    mutable cv::Mat maskBuffer_;
 };
 
 /// Crops the ROI, segments it, finds the largest contour and turns it into a

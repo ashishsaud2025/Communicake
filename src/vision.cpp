@@ -21,7 +21,9 @@ int oddAtLeastThree(int value) {
 
 } // namespace
 
-Segmenter::Segmenter(const VisionParams& params) : params_(params) {}
+Segmenter::Segmenter(const VisionParams& params) : params_(params) {
+    kernel_ = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+}
 
 void Segmenter::setParams(const VisionParams& params) {
     params_ = params;
@@ -50,42 +52,39 @@ bool Segmenter::hasBackground() const {
 }
 
 cv::Mat Segmenter::segment(const cv::Mat& roiBgr) const {
-    cv::Mat mask;
     if (roiBgr.empty()) {
-        return mask;
+        return cv::Mat();
     }
 
     if (params_.mode == SegmentationMode::Hsv) {
-        cv::Mat hsv;
-        cv::cvtColor(roiBgr, hsv, cv::COLOR_BGR2HSV);
-        cv::inRange(hsv, params_.hsvMin, params_.hsvMax, mask);
+        cv::cvtColor(roiBgr, hsvBuffer_, cv::COLOR_BGR2HSV);
+        cv::inRange(hsvBuffer_, params_.hsvMin, params_.hsvMax, maskBuffer_);
     } else {
         // Without a background model there is nothing to subtract; return an
         // empty mask rather than pretending the whole frame is a hand.
         if (!hasBackground_) {
-            return cv::Mat::zeros(roiBgr.size(), CV_8UC1);
+            maskBuffer_.create(roiBgr.size(), CV_8UC1);
+            maskBuffer_.setTo(0);
+            return maskBuffer_;
         }
-        cv::Mat gray;
-        cv::cvtColor(roiBgr, gray, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(roiBgr, grayBuffer_, cv::COLOR_BGR2GRAY);
         const int k = oddAtLeastThree(params_.blurKernel);
-        cv::GaussianBlur(gray, gray, cv::Size(k, k), 0);
+        cv::GaussianBlur(grayBuffer_, grayBuffer_, cv::Size(k, k), 0);
 
-        cv::Mat background;
-        if (background_.size() == gray.size()) {
-            background = background_;
-        } else {
+        const cv::Mat* background = &background_;
+        if (background_.size() != grayBuffer_.size()) {
             // The ROI moved or was resized since the background was captured.
-            cv::resize(background_, background, gray.size(), 0, 0, cv::INTER_LINEAR);
+            cv::resize(background_, scaledBackground_, grayBuffer_.size(), 0, 0, cv::INTER_LINEAR);
+            background = &scaledBackground_;
         }
-        cv::Mat difference;
-        cv::absdiff(gray, background, difference);
-        cv::threshold(difference, mask, params_.binaryThreshold, 255, cv::THRESH_BINARY);
+        cv::absdiff(grayBuffer_, *background, differenceBuffer_);
+        cv::threshold(differenceBuffer_, maskBuffer_, params_.binaryThreshold, 255,
+                      cv::THRESH_BINARY);
     }
 
-    const cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel);  // drop speckle
-    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel); // fill pinholes
-    return mask;
+    cv::morphologyEx(maskBuffer_, maskBuffer_, cv::MORPH_OPEN, kernel_);  // drop speckle
+    cv::morphologyEx(maskBuffer_, maskBuffer_, cv::MORPH_CLOSE, kernel_); // fill pinholes
+    return maskBuffer_;
 }
 
 HandPipeline::HandPipeline(const VisionParams& params) : params_(params), segmenter_(params) {}
@@ -123,7 +122,12 @@ HandObservation HandPipeline::process(const cv::Mat& frame) {
     }
 
     lastRoi_ = geometry::clampRect(params_.roi, frame.size());
-    roiView_ = frame(lastRoi_).clone();
+    if (lastRoi_.empty()) {
+        return observation;
+    }
+    // copyTo reuses roiView_'s storage when the ROI size is unchanged, which it
+    // is for every frame but the first after a resize.
+    frame(lastRoi_).copyTo(roiView_);
     mask_ = segmenter_.segment(roiView_);
     if (mask_.empty()) {
         return observation;

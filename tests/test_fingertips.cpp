@@ -93,4 +93,18 @@ TEST(confidence_stays_in_range) {
     }
 }
 
+TEST(reusing_the_frame_buffers_does_not_leak_state) {
+    HandPipeline pipeline(testParams());
+    pipeline.setBackground(synthetic::blank());
+    for (int round = 0; round < 3; ++round) {
+        for (int fingers = 0; fingers <= 5; ++fingers) {
+            const communicake::HandObservation observation =
+                pipeline.process(synthetic::makeHand(fingers));
+            CHECK_EQ(observation.fingerCount, fingers);
+            // The mask alias must still describe the frame just processed.
+            CHECK_EQ(pipeline.lastMask().size(), synthetic::blank().size());
+        }
+    }
+}
+
 TEST_MAIN
