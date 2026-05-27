@@ -24,6 +24,7 @@ add_library(communicake_core STATIC
     src/cli.cpp
     src/frame_source.cpp
     src/profile.cpp
+    src/timing.cpp
 )
 
 target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
