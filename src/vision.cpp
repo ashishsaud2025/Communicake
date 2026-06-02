@@ -1,6 +1,7 @@
 #include "communicake/vision.hpp"
 
 #include "communicake/geometry.hpp"
+#include "communicake/timing.hpp"
 
 #include <opencv2/imgproc.hpp>
 
@@ -117,10 +118,12 @@ cv::Rect HandPipeline::lastRoi() const {
 
 HandObservation HandPipeline::process(const cv::Mat& frame) {
     HandObservation observation;
+    timings_ = FrameTimings();
     if (frame.empty()) {
         return observation;
     }
 
+    Stopwatch watch;
     lastRoi_ = geometry::clampRect(params_.roi, frame.size());
     if (lastRoi_.empty()) {
         return observation;
@@ -129,8 +132,17 @@ HandObservation HandPipeline::process(const cv::Mat& frame) {
     // is for every frame but the first after a resize.
     frame(lastRoi_).copyTo(roiView_);
     mask_ = segmenter_.segment(roiView_);
+    timings_.segmentMs = watch.lapMs();
+
+    analyse(observation);
+    timings_.contourMs = watch.lapMs();
+    timings_.totalMs = timings_.segmentMs + timings_.contourMs;
+    return observation;
+}
+
+void HandPipeline::analyse(HandObservation& observation) const {
     if (mask_.empty()) {
-        return observation;
+        return;
     }
 
     std::vector<std::vector<cv::Point>> contours;
@@ -138,13 +150,13 @@ HandObservation HandPipeline::process(const cv::Mat& frame) {
 
     const int index = geometry::largestContourIndex(contours, params_.minContourArea);
     if (index < 0) {
-        return observation;
+        return;
     }
 
     const std::vector<cv::Point>& contour = contours[static_cast<std::size_t>(index)];
     const auto centre = geometry::centroid(contour);
     if (!centre.has_value()) {
-        return observation;
+        return;
     }
 
     observation.valid = true;
@@ -154,7 +166,10 @@ HandObservation HandPipeline::process(const cv::Mat& frame) {
     observation.fingertips = vision::findFingertips(contour, params_);
     observation.fingerCount = static_cast<int>(observation.fingertips.size());
     observation.confidence = vision::confidenceFor(observation, params_);
-    return observation;
+}
+
+const FrameTimings& HandPipeline::lastTimings() const {
+    return timings_;
 }
 
 namespace vision {

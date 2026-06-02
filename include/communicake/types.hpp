@@ -20,4 +20,11 @@ struct HandObservation {
     double area = 0.0;        ///< contour area in pixels
 };
 
+/// Wall-clock cost of the stages of one process() call.
+struct FrameTimings {
+    double segmentMs = 0.0; ///< colour conversion, subtraction and morphology
+    double contourMs = 0.0; ///< contour search, hull, fingertips and confidence
+    double totalMs = 0.0;   ///< segmentMs + contourMs
+};
+
 } // namespace communicake

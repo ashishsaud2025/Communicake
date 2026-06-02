@@ -73,13 +73,18 @@ class HandPipeline {
     const cv::Mat& lastMask() const;
     const cv::Mat& lastRoiView() const;
     cv::Rect lastRoi() const;
+    const FrameTimings& lastTimings() const;
 
   private:
+    /// Contour, hull, fingertips and confidence for the mask just produced.
+    void analyse(HandObservation& observation) const;
+
     VisionParams params_;
     Segmenter segmenter_;
     cv::Mat mask_;
     cv::Mat roiView_;
     cv::Rect lastRoi_;
+    FrameTimings timings_;
 };
 
 namespace vision {

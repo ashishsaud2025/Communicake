@@ -107,4 +107,15 @@ TEST(reusing_the_frame_buffers_does_not_leak_state) {
     }
 }
 
+TEST(the_stage_timings_add_up) {
+    HandPipeline pipeline(testParams());
+    pipeline.setBackground(synthetic::blank());
+    pipeline.process(synthetic::makeHand(3));
+    const communicake::FrameTimings& timings = pipeline.lastTimings();
+    CHECK(timings.segmentMs >= 0.0);
+    CHECK(timings.contourMs >= 0.0);
+    CHECK_NEAR(timings.totalMs, timings.segmentMs + timings.contourMs, 1e-9);
+    CHECK(timings.totalMs > 0.0);
+}
+
 TEST_MAIN
