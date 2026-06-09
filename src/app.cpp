@@ -153,7 +153,7 @@ int App::run(RunSummary* summary) {
 
         if (ui) {
             ui->show(frame, pipeline.lastMask(), pipeline.lastRoiView(), observation,
-                     stabilizer.current(), fps);
+                     stabilizer.current(), fps, pipeline.lastTimings());
         }
 
         const int key = ui ? ui->waitKey(1) : -1;

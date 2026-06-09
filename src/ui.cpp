@@ -4,6 +4,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
 
 namespace communicake {
@@ -125,7 +126,8 @@ void Ui::updateModeWindow() {
 }
 
 void Ui::show(const cv::Mat& frame, const cv::Mat& mask, const cv::Mat& roiView,
-              const HandObservation& observation, Gesture gesture, double fps) {
+              const HandObservation& observation, Gesture gesture, double fps,
+              const FrameTimings& timings) {
     if (!created_) {
         return;
     }
@@ -150,6 +152,22 @@ void Ui::show(const cv::Mat& frame, const cv::Mat& mask, const cv::Mat& roiView,
         (fps > 0.0 ? std::to_string(static_cast<int>(fps + 0.5)) + " fps" : std::string("-- fps"));
     cv::putText(canvas, counters, cv::Point(12, 62), cv::FONT_HERSHEY_SIMPLEX, 0.6,
                 cv::Scalar(30, 220, 30), 1);
+
+    char stageText[96];
+    std::snprintf(stageText, sizeof(stageText), "segment %.1f ms   analyse %.1f ms",
+                  timings.segmentMs, timings.contourMs);
+    cv::putText(canvas, stageText, cv::Point(12, 88), cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                cv::Scalar(200, 200, 200), 1);
+
+    std::string confidence = "confidence --";
+    if (observation.valid) {
+        char buffer[48];
+        std::snprintf(buffer, sizeof(buffer), "confidence %.2f  area %.0f", observation.confidence,
+                      observation.area);
+        confidence = buffer;
+    }
+    cv::putText(canvas, confidence, cv::Point(12, 110), cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                cv::Scalar(200, 200, 200), 1);
 
     cv::imshow(kOriginal, canvas);
     if (!mask.empty()) {

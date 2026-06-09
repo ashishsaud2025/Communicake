@@ -25,7 +25,8 @@ class Ui {
     void updateModeWindow();
 
     void show(const cv::Mat& frame, const cv::Mat& mask, const cv::Mat& roiView,
-              const HandObservation& observation, Gesture gesture, double fps);
+              const HandObservation& observation, Gesture gesture, double fps,
+              const FrameTimings& timings);
 
     int waitKey(int milliseconds);
     void destroy();
