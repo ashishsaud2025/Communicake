@@ -89,7 +89,7 @@ class HandPipeline {
 
 namespace vision {
 
-/// Fingertip points for a hand contour, ordered by distance from the centroid.
+/// Fingertip points for a hand contour, ordered clockwise around the centroid.
 /// At most five points are returned.
 std::vector<cv::Point> findFingertips(const std::vector<cv::Point>& contour,
                                       const VisionParams& params);

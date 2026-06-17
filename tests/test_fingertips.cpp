@@ -107,6 +107,28 @@ TEST(reusing_the_frame_buffers_does_not_leak_state) {
     }
 }
 
+TEST(fingertips_are_ordered_around_the_palm) {
+    HandPipeline pipeline(testParams());
+    pipeline.setBackground(synthetic::blank());
+    const communicake::HandObservation observation = pipeline.process(synthetic::makeHand(5));
+    CHECK_EQ(observation.fingertips.size(), std::size_t(5));
+
+    double previous = -10.0;
+    for (const cv::Point& tip : observation.fingertips) {
+        const double angle = std::atan2(static_cast<double>(tip.y - observation.centroid.y),
+                                        static_cast<double>(tip.x - observation.centroid.x));
+        CHECK(angle >= previous);
+        previous = angle;
+    }
+
+    // Two runs of the same frame must produce the same order.
+    const communicake::HandObservation again = pipeline.process(synthetic::makeHand(5));
+    CHECK_EQ(again.fingertips.size(), observation.fingertips.size());
+    for (std::size_t i = 0; i < observation.fingertips.size() && i < again.fingertips.size(); ++i) {
+        CHECK_EQ(again.fingertips[i], observation.fingertips[i]);
+    }
+}
+
 TEST(the_stage_timings_add_up) {
     HandPipeline pipeline(testParams());
     pipeline.setBackground(synthetic::blank());

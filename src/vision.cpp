@@ -270,6 +270,18 @@ std::vector<cv::Point> findFingertips(const std::vector<cv::Point>& contour,
             fingertips.push_back(candidate.point);
         }
     }
+
+    // Order them around the palm so the order does not depend on which
+    // fingertip happened to be farthest from the centroid. In screen
+    // coordinates (y down) increasing atan2 walks clockwise on screen.
+    std::sort(fingertips.begin(), fingertips.end(), [&centre](const cv::Point& a,
+                                                              const cv::Point& b) {
+        const double angleA =
+            std::atan2(static_cast<double>(a.y - centre->y), static_cast<double>(a.x - centre->x));
+        const double angleB =
+            std::atan2(static_cast<double>(b.y - centre->y), static_cast<double>(b.x - centre->x));
+        return angleA < angleB;
+    });
     return fingertips;
 }
 
