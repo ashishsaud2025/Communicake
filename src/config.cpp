@@ -229,6 +229,8 @@ std::optional<AppConfig> AppConfig::fromJson(const json::Value& root, std::strin
             !readInt(vision, "minFingerGap", "vision", 1, 5000, config.vision.minFingerGap, error) ||
             !readInt(vision, "defectDepth", "vision", 0, 1000, config.vision.defectDepth, error) ||
             !readInt(vision, "blurKernel", "vision", 3, 31, config.vision.blurKernel, error) ||
+            !readNumber(vision, "minConfidence", "vision", 0.0, 1.0, config.vision.minConfidence,
+                        error) ||
             !readRoi(vision, "roi", "vision", config.vision.roi, error) ||
             !readColor(vision, "hsvMin", "vision", config.vision.hsvMin, error) ||
             !readColor(vision, "hsvMax", "vision", config.vision.hsvMax, error)) {
@@ -300,6 +302,7 @@ json::Value AppConfig::toJson() const {
     visionValue.set("minFingerGap", json::Value(vision.minFingerGap));
     visionValue.set("defectDepth", json::Value(vision.defectDepth));
     visionValue.set("blurKernel", json::Value(vision.blurKernel));
+    visionValue.set("minConfidence", json::Value(vision.minConfidence));
     json::Value roi;
     roi.push(json::Value(vision.roi.x));
     roi.push(json::Value(vision.roi.y));

@@ -7,6 +7,7 @@
     "minFingerGap": 34,
     "defectDepth": 18,
     "blurKernel": 5,
+    "minConfidence": 0.0,
     "roi": [10, 10, 300, 300],
     "hsvMin": [0, 60, 60],
     "hsvMax": [25, 255, 255]

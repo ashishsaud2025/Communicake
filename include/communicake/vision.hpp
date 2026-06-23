@@ -18,6 +18,7 @@ struct VisionParams {
     int minFingerGap = 34;
     int defectDepth = 18;
     int blurKernel = 5;
+    double minConfidence = 0.0; ///< observations below this never reach the stabiliser
     cv::Rect roi{10, 10, 300, 300};
     cv::Scalar hsvMin{0, 60, 60};
     cv::Scalar hsvMax{25, 255, 255};

@@ -86,6 +86,7 @@ TEST(the_dry_run_flag_is_read) {
 TEST(a_config_round_trips_through_a_file) {
     AppConfig original = AppConfig::defaults();
     original.vision.binaryThreshold = 33;
+    original.vision.minConfidence = 0.4;
     original.vision.roi = cv::Rect(4, 5, 200, 210);
     original.stabilizer.requiredFrames = 7;
     original.dryRun = true;
@@ -98,11 +99,26 @@ TEST(a_config_round_trips_through_a_file) {
     const auto loaded = AppConfig::load(path.string(), &error);
     CHECK(loaded.has_value());
     CHECK_EQ(loaded->vision.binaryThreshold, 33);
+    CHECK_NEAR(loaded->vision.minConfidence, 0.4, 1e-9);
     CHECK_EQ(loaded->vision.roi, cv::Rect(4, 5, 200, 210));
     CHECK_EQ(loaded->stabilizer.requiredFrames, 7);
     CHECK(loaded->dryRun);
 
     std::filesystem::remove(path);
+}
+
+TEST(the_confidence_floor_is_range_checked) {
+    std::string error;
+    const auto parsed = AppConfig::fromJson(parse(R"({"vision": {"minConfidence": 1.5}})"), &error);
+    CHECK(!parsed.has_value());
+    CHECK(error.find("minConfidence") != std::string::npos);
+}
+
+TEST(a_config_without_a_confidence_floor_keeps_the_default) {
+    const auto parsed = AppConfig::fromJson(parse(R"({"vision": {"binaryThreshold": 12}})"));
+    CHECK(parsed.has_value());
+    CHECK_NEAR(parsed->vision.minConfidence, 0.0, 1e-9);
+    CHECK_EQ(parsed->vision.binaryThreshold, 12);
 }
 
 TEST(a_malformed_file_names_the_path) {
