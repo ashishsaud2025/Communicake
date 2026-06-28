@@ -108,10 +108,19 @@ int App::run(RunSummary* summary) {
         }
 
         const HandObservation observation = pipeline.process(frame);
+        // A contour that barely looks like a hand must not reach the
+        // stabiliser: a stray sleeve or a shadow would otherwise count up to a
+        // gesture of its own.
+        const bool accepted = observation.valid && observation.confidence >= params.minConfidence;
         const std::optional<Gesture> observed =
-            observation.valid ? gestureFromFingerCount(observation.fingerCount)
-                              : std::optional<Gesture>(Gesture::None);
+            accepted ? gestureFromFingerCount(observation.fingerCount)
+                     : std::optional<Gesture>(Gesture::None);
         const std::optional<Gesture> event = stabilizer.update(observed.value_or(Gesture::None));
+
+        if (!accepted && options_.verbose) {
+            std::printf("[%5zu] rejected  confidence=%.2f < %.2f\n", frameIndex,
+                        observation.confidence, params.minConfidence);
+        }
 
         if (event.has_value()) {
             const std::string command = commandFor(*event);

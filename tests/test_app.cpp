@@ -106,6 +106,23 @@ TEST(an_empty_scene_triggers_nothing) {
     fs::remove_all(directory);
 }
 
+TEST(a_confidence_floor_suppresses_gestures) {
+    const fs::path directory = buildSequence("communicake_it_confidence", 10, 3);
+
+    Options options;
+    options.input = directory.string();
+    options.headless = true;
+
+    AppConfig config = syntheticConfig();
+    config.vision.minConfidence = 0.99; // the synthetic hand cannot reach this
+    App app(options, config);
+    RunSummary summary;
+    CHECK_EQ(app.run(&summary), 0);
+    CHECK_EQ(summary.frames, std::size_t(10));
+    CHECK_EQ(summary.triggered, std::size_t(0));
+    fs::remove_all(directory);
+}
+
 TEST(a_missing_input_fails_cleanly) {
     Options options;
     options.input = "definitely-not-a-video.mp4";
