@@ -39,6 +39,8 @@ Options:
   --headless         Run without windows; print gestures as they fire
   --dry-run          Print the action instead of launching it
   --dump-mask DIR    Write the segmentation mask of every frame to DIR
+  --benchmark FRAMES Process FRAMES frames without windows or actions and
+                     report the frame timings
   --width PIXELS     Requested capture width
   --height PIXELS    Requested capture height
   -v, --verbose      Print an observation for every frame
@@ -91,7 +93,8 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
             options.dryRun = true;
         } else if (argument == "-v" || argument == "--verbose") {
             options.verbose = true;
-        } else if (argument == "--camera" || argument == "--width" || argument == "--height") {
+        } else if (argument == "--camera" || argument == "--width" || argument == "--height" ||
+                   argument == "--benchmark") {
             std::string value;
             if (!takeValue(value)) {
                 return fail(argument + ": missing value");
@@ -101,12 +104,17 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
                 return fail(argument + ": expected a non-negative whole number, got \"" + value +
                             "\"");
             }
+            if (argument == "--benchmark" && number == 0) {
+                return fail("--benchmark: expected at least one frame");
+            }
             if (argument == "--camera") {
                 options.camera = number;
             } else if (argument == "--width") {
                 options.width = number;
-            } else {
+            } else if (argument == "--height") {
                 options.height = number;
+            } else {
+                options.benchmark = number;
             }
         } else if (argument == "--input" || argument == "--config" || argument == "--profile" ||
                    argument == "--dump-mask") {

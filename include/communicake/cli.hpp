@@ -15,6 +15,7 @@ struct Options {
     std::string dumpMaskDir;
     int width = 0;
     int height = 0;
+    int benchmark = 0; ///< process this many frames, then report timings and exit
     bool headless = false;
     bool dryRun = false;
     bool verbose = false;

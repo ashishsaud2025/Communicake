@@ -14,6 +14,8 @@ namespace communicake {
 struct RunSummary {
     std::size_t frames = 0;
     std::size_t triggered = 0;
+    double meanFrameMs = 0.0;
+    double p95FrameMs = 0.0;
     std::vector<std::string> actions;
 };
 

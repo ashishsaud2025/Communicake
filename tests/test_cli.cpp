@@ -72,4 +72,14 @@ TEST(non_numeric_values_are_rejected) {
     CHECK(!parseArgs({"--width", "-4"}, &error).has_value());
 }
 
+TEST(a_benchmark_needs_a_positive_frame_count) {
+    const Options options = parse({"--benchmark", "120"});
+    CHECK_EQ(options.benchmark, 120);
+
+    std::string error;
+    CHECK(!parseArgs({"--benchmark", "0"}, &error).has_value());
+    CHECK(error.find("at least one frame") != std::string::npos);
+    CHECK(!parseArgs({"--benchmark"}, &error).has_value());
+}
+
 TEST_MAIN

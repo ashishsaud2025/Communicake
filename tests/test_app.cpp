@@ -123,6 +123,22 @@ TEST(a_confidence_floor_suppresses_gestures) {
     fs::remove_all(directory);
 }
 
+TEST(a_benchmark_stops_after_the_requested_frames) {
+    const fs::path directory = buildSequence("communicake_it_benchmark", 20, 3);
+
+    Options options;
+    options.input = directory.string();
+    options.benchmark = 5;
+
+    App app(options, syntheticConfig());
+    RunSummary summary;
+    CHECK_EQ(app.run(&summary), 0);
+    CHECK_EQ(summary.frames, std::size_t(5));
+    CHECK(summary.meanFrameMs > 0.0);
+    CHECK(summary.p95FrameMs >= summary.meanFrameMs);
+    fs::remove_all(directory);
+}
+
 TEST(a_missing_input_fails_cleanly) {
     Options options;
     options.input = "definitely-not-a-video.mp4";

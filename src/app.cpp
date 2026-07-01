@@ -4,6 +4,7 @@
 #include "communicake/frame_source.hpp"
 #include "communicake/gesture.hpp"
 #include "communicake/profile.hpp"
+#include "communicake/timing.hpp"
 #include "communicake/ui.hpp"
 #include "communicake/vision.hpp"
 
@@ -27,6 +28,12 @@ std::string App::commandFor(Gesture gesture) const {
 }
 
 int App::run(RunSummary* summary) {
+    // A benchmark is a measurement, not a session: no windows, no actions.
+    if (options_.benchmark > 0) {
+        options_.headless = true;
+        options_.dryRun = true;
+    }
+
     std::unique_ptr<FrameSource> source;
     std::string requested;
     if (!options_.input.empty()) {
@@ -98,8 +105,12 @@ int App::run(RunSummary* summary) {
     double fps = source->fps();
     auto lastFpsUpdate = std::chrono::steady_clock::now();
     int framesSinceUpdate = 0;
+    RollingStats frameTimes(240);
 
-    while (source->next(frame)) {
+    const std::size_t frameLimit =
+        options_.benchmark > 0 ? static_cast<std::size_t>(options_.benchmark) : 0;
+
+    while ((frameLimit == 0 || processed < frameLimit) && source->next(frame)) {
         ++frameIndex;
         if (ui) {
             ui->readIntoParams();
@@ -152,6 +163,7 @@ int App::run(RunSummary* summary) {
 
         ++processed;
         ++framesSinceUpdate;
+        frameTimes.add(pipeline.lastTimings().totalMs);
         const auto now = std::chrono::steady_clock::now();
         const double elapsed = std::chrono::duration<double>(now - lastFpsUpdate).count();
         if (elapsed >= 0.5) {
@@ -202,8 +214,18 @@ int App::run(RunSummary* summary) {
     if (summary != nullptr) {
         summary->frames = processed;
         summary->triggered = triggered;
+        summary->meanFrameMs = frameTimes.mean();
+        summary->p95FrameMs = frameTimes.percentile(0.95);
     }
-    if (options_.headless) {
+    if (options_.benchmark > 0) {
+        const double mean = frameTimes.mean();
+        std::printf("benchmark: %zu frames, mean %.2f ms, p95 %.2f ms, max %.2f ms", processed, mean,
+                    frameTimes.percentile(0.95), frameTimes.maximum());
+        if (mean > 0.0) {
+            std::printf(" (%.1f fps)", 1000.0 / mean);
+        }
+        std::printf("\n");
+    } else if (options_.headless) {
         std::printf("processed %zu frames, triggered %zu actions\n", processed, triggered);
     }
     return 0;
