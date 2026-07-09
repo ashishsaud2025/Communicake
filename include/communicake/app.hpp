@@ -9,13 +9,22 @@
 
 namespace communicake {
 
+/// Mean, median, tail and worst case for one series of timings.
+struct StageStats {
+    double meanMs = 0.0;
+    double p50Ms = 0.0;
+    double p95Ms = 0.0;
+    double maxMs = 0.0;
+};
+
 /// What a run did. Returned so the tests can assert on a headless run without
 /// scraping stdout.
 struct RunSummary {
     std::size_t frames = 0;
     std::size_t triggered = 0;
-    double meanFrameMs = 0.0;
-    double p95FrameMs = 0.0;
+    StageStats segment;
+    StageStats analyse;
+    StageStats frame;
     std::vector<std::string> actions;
 };
 

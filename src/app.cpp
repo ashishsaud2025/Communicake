@@ -16,6 +16,18 @@
 #include <memory>
 
 namespace communicake {
+namespace {
+
+StageStats summarise(const RollingStats& samples) {
+    StageStats stats;
+    stats.meanMs = samples.mean();
+    stats.p50Ms = samples.percentile(0.5);
+    stats.p95Ms = samples.percentile(0.95);
+    stats.maxMs = samples.maximum();
+    return stats;
+}
+
+} // namespace
 
 App::App(Options options, AppConfig config) : options_(std::move(options)), config_(std::move(config)) {}
 
@@ -105,7 +117,13 @@ int App::run(RunSummary* summary) {
     double fps = source->fps();
     auto lastFpsUpdate = std::chrono::steady_clock::now();
     int framesSinceUpdate = 0;
+    RollingStats segmentTimes(240);
+    RollingStats analyseTimes(240);
     RollingStats frameTimes(240);
+
+    // The first frames of a capture are dominated by allocator and cache
+    // warm-up; including them would make short benchmarks pessimistic.
+    constexpr std::size_t kWarmupFrames = 3;
 
     const std::size_t frameLimit =
         options_.benchmark > 0 ? static_cast<std::size_t>(options_.benchmark) : 0;
@@ -163,7 +181,11 @@ int App::run(RunSummary* summary) {
 
         ++processed;
         ++framesSinceUpdate;
-        frameTimes.add(pipeline.lastTimings().totalMs);
+        if (processed > kWarmupFrames) {
+            segmentTimes.add(pipeline.lastTimings().segmentMs);
+            analyseTimes.add(pipeline.lastTimings().contourMs);
+            frameTimes.add(pipeline.lastTimings().totalMs);
+        }
         const auto now = std::chrono::steady_clock::now();
         const double elapsed = std::chrono::duration<double>(now - lastFpsUpdate).count();
         if (elapsed >= 0.5) {
@@ -214,17 +236,23 @@ int App::run(RunSummary* summary) {
     if (summary != nullptr) {
         summary->frames = processed;
         summary->triggered = triggered;
-        summary->meanFrameMs = frameTimes.mean();
-        summary->p95FrameMs = frameTimes.percentile(0.95);
+        summary->segment = summarise(segmentTimes);
+        summary->analyse = summarise(analyseTimes);
+        summary->frame = summarise(frameTimes);
     }
     if (options_.benchmark > 0) {
-        const double mean = frameTimes.mean();
-        std::printf("benchmark: %zu frames, mean %.2f ms, p95 %.2f ms, max %.2f ms", processed, mean,
-                    frameTimes.percentile(0.95), frameTimes.maximum());
-        if (mean > 0.0) {
-            std::printf(" (%.1f fps)", 1000.0 / mean);
+        const StageStats total = summarise(frameTimes);
+        std::printf("benchmark: %zu frames (%zu after warm-up)\n", processed, frameTimes.count());
+        const auto printStage = [](const char* name, const StageStats& stats) {
+            std::printf("  %-7s mean %6.2f  p50 %6.2f  p95 %6.2f  max %6.2f ms\n", name,
+                        stats.meanMs, stats.p50Ms, stats.p95Ms, stats.maxMs);
+        };
+        printStage("segment", summarise(segmentTimes));
+        printStage("analyse", summarise(analyseTimes));
+        printStage("total", total);
+        if (total.meanMs > 0.0) {
+            std::printf("  ceiling %.1f fps (mean total per frame)\n", 1000.0 / total.meanMs);
         }
-        std::printf("\n");
     } else if (options_.headless) {
         std::printf("processed %zu frames, triggered %zu actions\n", processed, triggered);
     }

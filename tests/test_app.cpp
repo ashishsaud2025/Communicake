@@ -128,14 +128,20 @@ TEST(a_benchmark_stops_after_the_requested_frames) {
 
     Options options;
     options.input = directory.string();
-    options.benchmark = 5;
+    options.benchmark = 12;
 
     App app(options, syntheticConfig());
     RunSummary summary;
     CHECK_EQ(app.run(&summary), 0);
-    CHECK_EQ(summary.frames, std::size_t(5));
-    CHECK(summary.meanFrameMs > 0.0);
-    CHECK(summary.p95FrameMs >= summary.meanFrameMs);
+    CHECK_EQ(summary.frames, std::size_t(12));
+    CHECK(summary.frame.meanMs > 0.0);
+    CHECK(summary.segment.meanMs > 0.0);
+    CHECK(summary.analyse.meanMs > 0.0);
+    // The frame total is the sum of its stages, and the tail is never shorter
+    // than the median.
+    CHECK_NEAR(summary.frame.meanMs, summary.segment.meanMs + summary.analyse.meanMs, 1e-6);
+    CHECK(summary.frame.p50Ms <= summary.frame.p95Ms);
+    CHECK(summary.frame.p95Ms <= summary.frame.maxMs);
     fs::remove_all(directory);
 }
 
