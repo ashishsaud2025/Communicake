@@ -27,13 +27,15 @@ TEST(the_defaults_are_a_plain_camera_run) {
 
 TEST(every_documented_option_is_parsed) {
     const Options options = parse({"--camera", "2",   "--input",  "clip.mp4", "--config", "c.json",
-                                   "--profile", "p.json", "--dump-mask", "masks", "--width", "640",
-                                   "--height", "480", "--headless", "--dry-run", "--verbose"});
+                                   "--profile", "p.json", "--dump-mask", "masks", "--log",
+                                   "observations.csv", "--width", "640", "--height", "480",
+                                   "--headless", "--dry-run", "--verbose"});
     CHECK_EQ(options.camera, 2);
     CHECK_EQ(options.input, std::string("clip.mp4"));
     CHECK_EQ(options.configPath, std::string("c.json"));
     CHECK_EQ(options.profilePath, std::string("p.json"));
     CHECK_EQ(options.dumpMaskDir, std::string("masks"));
+    CHECK_EQ(options.logPath, std::string("observations.csv"));
     CHECK_EQ(options.width, 640);
     CHECK_EQ(options.height, 480);
     CHECK(options.headless);

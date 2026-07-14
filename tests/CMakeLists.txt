@@ -8,6 +8,7 @@ set(COMMUNICAKE_TESTS
     test_cli.cpp
     test_app.cpp
     test_timing.cpp
+    test_observation_log.cpp
 )
 
 foreach(test_source ${COMMUNICAKE_TESTS})

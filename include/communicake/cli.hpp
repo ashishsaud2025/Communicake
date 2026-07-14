@@ -13,6 +13,7 @@ struct Options {
     std::string configPath; ///< empty means "config/actions.json when it exists"
     std::string profilePath;
     std::string dumpMaskDir;
+    std::string logPath; ///< CSV of per-frame observations; empty means no log
     int width = 0;
     int height = 0;
     int benchmark = 0; ///< process this many frames, then report timings and exit

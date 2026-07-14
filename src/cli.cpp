@@ -39,6 +39,7 @@ Options:
   --headless         Run without windows; print gestures as they fire
   --dry-run          Print the action instead of launching it
   --dump-mask DIR    Write the segmentation mask of every frame to DIR
+  --log PATH         Write one CSV row per processed frame to PATH
   --benchmark FRAMES Process FRAMES frames without windows or actions and
                      report the frame timings
   --width PIXELS     Requested capture width
@@ -117,7 +118,7 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
                 options.benchmark = number;
             }
         } else if (argument == "--input" || argument == "--config" || argument == "--profile" ||
-                   argument == "--dump-mask") {
+                   argument == "--dump-mask" || argument == "--log") {
             std::string value;
             if (!takeValue(value)) {
                 return fail(argument + ": missing value");
@@ -128,6 +129,8 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
                 options.configPath = value;
             } else if (argument == "--profile") {
                 options.profilePath = value;
+            } else if (argument == "--log") {
+                options.logPath = value;
             } else {
                 options.dumpMaskDir = value;
             }

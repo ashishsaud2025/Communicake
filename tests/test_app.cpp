@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 
 namespace fs = std::filesystem;
 
@@ -142,6 +143,40 @@ TEST(a_benchmark_stops_after_the_requested_frames) {
     CHECK_NEAR(summary.frame.meanMs, summary.segment.meanMs + summary.analyse.meanMs, 1e-6);
     CHECK(summary.frame.p50Ms <= summary.frame.p95Ms);
     CHECK(summary.frame.p95Ms <= summary.frame.maxMs);
+    fs::remove_all(directory);
+}
+
+TEST(a_run_can_log_every_frame) {
+    const fs::path directory = buildSequence("communicake_it_log", 8, 3);
+    const fs::path logPath = fs::temp_directory_path() / "communicake_it_log.csv";
+    fs::remove(logPath);
+
+    Options options;
+    options.input = directory.string();
+    options.headless = true;
+    options.logPath = logPath.string();
+
+    App app(options, syntheticConfig());
+    RunSummary summary;
+    CHECK_EQ(app.run(&summary), 0);
+    CHECK_EQ(summary.frames, std::size_t(8));
+
+    {
+        std::ifstream file(logPath);
+        std::string line;
+        std::size_t rows = 0;
+        bool sawThree = false;
+        while (std::getline(file, line)) {
+            ++rows;
+            if (line.find("three") != std::string::npos && line.find("echo three") != std::string::npos) {
+                sawThree = true;
+            }
+        }
+        CHECK_EQ(rows, std::size_t(9)); // header plus one row per frame
+        CHECK(sawThree);
+    }
+
+    fs::remove(logPath);
     fs::remove_all(directory);
 }
 

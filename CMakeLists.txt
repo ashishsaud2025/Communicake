@@ -24,6 +24,7 @@ add_library(communicake_core STATIC
     src/cli.cpp
     src/frame_source.cpp
     src/profile.cpp
+    src/observation_log.cpp
     src/timing.cpp
 )
 

@@ -3,6 +3,7 @@
 #include "communicake/action.hpp"
 #include "communicake/frame_source.hpp"
 #include "communicake/gesture.hpp"
+#include "communicake/observation_log.hpp"
 #include "communicake/profile.hpp"
 #include "communicake/timing.hpp"
 #include "communicake/ui.hpp"
@@ -103,6 +104,16 @@ int App::run(RunSummary* summary) {
         ui->create();
     }
 
+    ObservationLog log;
+    if (!options_.logPath.empty()) {
+        std::string logError;
+        if (!log.open(options_.logPath, &logError)) {
+            std::fprintf(stderr, "error: %s\n", logError.c_str());
+            return 2;
+        }
+        std::printf("log: %s\n", options_.logPath.c_str());
+    }
+
     if (!options_.dumpMaskDir.empty()) {
         std::error_code error;
         std::filesystem::create_directories(options_.dumpMaskDir, error);
@@ -151,11 +162,13 @@ int App::run(RunSummary* summary) {
                         observation.confidence, params.minConfidence);
         }
 
+        std::string fired;
         if (event.has_value()) {
             const std::string command = commandFor(*event);
             if (!command.empty()) {
                 const std::string expanded = ActionRunner::expand(command, currentPlatform());
                 runner.run(expanded);
+                fired = expanded;
                 ++triggered;
                 if (summary != nullptr) {
                     summary->actions.push_back(expanded);
@@ -170,6 +183,18 @@ int App::run(RunSummary* summary) {
             std::printf("[%5zu] %-5s fingers=%d confidence=%.2f area=%.0f\n", frameIndex,
                         gestureName(observed.value_or(Gesture::None)), observation.fingerCount,
                         observation.confidence, observation.area);
+        }
+
+        if (log.isOpen()) {
+            ObservationRecord record;
+            record.frame = frameIndex;
+            record.handVisible = observation.valid;
+            record.fingerCount = observation.fingerCount;
+            record.confidence = observation.confidence;
+            record.area = observation.area;
+            record.gesture = gestureName(observed.value_or(Gesture::None));
+            record.command = fired;
+            log.write(record);
         }
 
         if (!options_.dumpMaskDir.empty() && !pipeline.lastMask().empty()) {
