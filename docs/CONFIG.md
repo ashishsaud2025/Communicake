@@ -23,6 +23,7 @@ communicake --dry-run           # print actions instead of launching them
 | `roi` | array | `[x, y, w, h]` | `[10, 10, 300, 300]` | Region analysed each frame |
 | `hsvMin` | array | three 0–255 | `[0, 60, 60]` | Lower bound for HSV mode |
 | `hsvMax` | array | three 0–255 | `[25, 255, 255]` | Upper bound for HSV mode |
+| `minConfidence` | number | 0–1 | `0.0` | Observations below this confidence never reach the gesture stabiliser |
 
 The ROI is clamped to the frame, so a size larger than the camera cannot crash
 the pipeline.
@@ -100,3 +101,33 @@ config/actions.json: vision.binaryThreshold: must be between 0 and 255
 ```
 
 Both exit with status 2.
+
+## Benchmarking
+
+`--benchmark FRAMES` processes that many frames without windows or actions,
+then reports per-stage timings:
+
+```
+communicake --benchmark 120 --input samples/
+benchmark: 120 frames (117 after warm-up)
+  segment  mean   0.98  p50   0.71  p95   1.78  max   1.96 ms
+  analyse  mean   0.22  p50   0.19  p95   0.33  max   0.35 ms
+  total    mean   1.19  p50   0.97  p95   2.05  max   2.18 ms
+  ceiling 837.3 fps (mean total per frame)
+```
+
+The first few frames are treated as warm-up and excluded from the statistics,
+since they include allocator and cache warm-up.
+
+## Observation logging
+
+`--log PATH` writes one CSV row per processed frame to `PATH`:
+
+```
+frame,hand,fingers,confidence,area,gesture,command
+1,0,0,0.000,0,none,
+2,1,3,0.625,18322,three,"echo one,two"
+```
+
+This is useful for replaying a session offline when a gesture did not do what
+was expected. Use `--headless` together with `--log` to run without windows.
