@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <string>
 #include <system_error>
 #include <vector>
 
@@ -71,6 +72,52 @@ class ImageSequenceSource : public FrameSource {
     std::size_t index_ = 0;
 };
 
+// A sort key that compares the numeric parts of a filename in value order
+// (so frame_2 sorts before frame_10) and the text parts lexicographically.
+// This makes image sequences captured without zero-padding play in the right
+// order instead of the surprising lexicographic one.
+std::vector<std::string> frameOrderKey(const fs::path& path) {
+    std::string stem = path.stem().string();
+    std::vector<std::string> key;
+    std::string current;
+    bool currentIsDigit = false;
+    for (char c : stem) {
+        bool isDigit = c >= '0' && c <= '9';
+        if (isDigit != currentIsDigit && !current.empty()) {
+            key.push_back(current);
+            current.clear();
+        }
+        currentIsDigit = isDigit;
+        current.push_back(c);
+    }
+    if (!current.empty()) {
+        key.push_back(current);
+    }
+    return key;
+}
+
+bool frameLess(const std::string& a, const std::string& b) {
+    const auto keyA = frameOrderKey(fs::path(a));
+    const auto keyB = frameOrderKey(fs::path(b));
+    const std::size_t n = std::min(keyA.size(), keyB.size());
+    for (std::size_t i = 0; i < n; ++i) {
+        const bool aDigit = !keyA[i].empty() && keyA[i].front() >= '0' &&
+                            keyA[i].front() <= '9';
+        const bool bDigit = !keyB[i].empty() && keyB[i].front() >= '0' &&
+                            keyB[i].front() <= '9';
+        if (aDigit && bDigit) {
+            const long long ai = std::stoll(keyA[i]);
+            const long long bi = std::stoll(keyB[i]);
+            if (ai != bi) {
+                return ai < bi;
+            }
+        } else if (keyA[i] != keyB[i]) {
+            return keyA[i] < keyB[i];
+        }
+    }
+    return keyA.size() < keyB.size();
+}
+
 bool hasImageExtension(const fs::path& path) {
     std::string extension = path.extension().string();
     std::transform(extension.begin(), extension.end(), extension.begin(),
@@ -136,7 +183,7 @@ std::unique_ptr<FrameSource> openImageSequence(const std::string& directory) {
     if (files.empty()) {
         return nullptr;
     }
-    std::sort(files.begin(), files.end());
+    std::sort(files.begin(), files.end(), frameLess);
     return std::make_unique<ImageSequenceSource>(std::move(files), directory);
 }
 

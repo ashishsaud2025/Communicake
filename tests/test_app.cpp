@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <string>
 
 namespace fs = std::filesystem;
 
@@ -174,6 +175,55 @@ TEST(a_run_can_log_every_frame) {
         }
         CHECK_EQ(rows, std::size_t(9)); // header plus one row per frame
         CHECK(sawThree);
+    }
+
+    fs::remove(logPath);
+    fs::remove_all(directory);
+}
+
+TEST(image_sequence_frames_are_ordered_numerically) {
+    const fs::path directory = fs::temp_directory_path() / "communicake_it_numeric";
+    fs::remove_all(directory);
+    fs::create_directories(directory);
+
+    // First frame is the background; the rest show hands with 1, 2, 3 fingers,
+    // but named without zero-padding so lexicographic order would be wrong.
+    cv::imwrite((directory / "frame_0.png").string(), synthetic::blank());
+    cv::imwrite((directory / "frame_10.png").string(), synthetic::makeHand(3));
+    cv::imwrite((directory / "frame_2.png").string(), synthetic::makeHand(2));
+    cv::imwrite((directory / "frame_1.png").string(), synthetic::makeHand(1));
+
+    const fs::path logPath = fs::temp_directory_path() / "communicake_it_numeric.csv";
+    fs::remove(logPath);
+
+    Options options;
+    options.input = directory.string();
+    options.headless = true;
+    options.logPath = logPath.string();
+
+    App app(options, syntheticConfig());
+    RunSummary summary;
+    CHECK_EQ(app.run(&summary), 0);
+    CHECK_EQ(summary.frames, std::size_t(3));
+
+    {
+        std::ifstream file(logPath);
+        std::string line;
+        std::getline(file, line); // skip header
+        std::vector<int> counts;
+        while (std::getline(file, line)) {
+            // CSV: frame,hand,fingers,confidence,area,gesture,command
+            const std::size_t first = line.find(',');
+            const std::size_t second = line.find(',', first + 1);
+            const std::size_t third = line.find(',', second + 1);
+            const int fingers = std::stoi(line.substr(second + 1, third - second - 1));
+            counts.push_back(fingers);
+        }
+        // Numeric order: frame_1 (1 finger), frame_2 (2 fingers), frame_10 (3 fingers)
+        CHECK_EQ(counts.size(), std::size_t(3));
+        CHECK_EQ(counts[0], 1);
+        CHECK_EQ(counts[1], 2);
+        CHECK_EQ(counts[2], 3);
     }
 
     fs::remove(logPath);
