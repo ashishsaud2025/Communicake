@@ -230,6 +230,21 @@ TEST(image_sequence_frames_are_ordered_numerically) {
     fs::remove_all(directory);
 }
 
+TEST(a_realtime_run_of_an_image_sequence_still_completes) {
+    const fs::path directory = buildSequence("communicake_it_realtime", 4, 2);
+
+    Options options;
+    options.input = directory.string();
+    options.headless = true;
+    options.realtime = true; // an image sequence has no FPS, so no pacing happens
+
+    App app(options, syntheticConfig());
+    RunSummary summary;
+    CHECK_EQ(app.run(&summary), 0);
+    CHECK_EQ(summary.frames, std::size_t(4));
+    fs::remove_all(directory);
+}
+
 TEST(a_missing_input_fails_cleanly) {
     Options options;
     options.input = "definitely-not-a-video.mp4";

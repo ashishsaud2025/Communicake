@@ -29,7 +29,7 @@ TEST(every_documented_option_is_parsed) {
     const Options options = parse({"--camera", "2",   "--input",  "clip.mp4", "--config", "c.json",
                                    "--profile", "p.json", "--dump-mask", "masks", "--log",
                                    "observations.csv", "--width", "640", "--height", "480",
-                                   "--headless", "--dry-run", "--verbose"});
+                                   "--headless", "--dry-run", "--realtime", "--verbose"});
     CHECK_EQ(options.camera, 2);
     CHECK_EQ(options.input, std::string("clip.mp4"));
     CHECK_EQ(options.configPath, std::string("c.json"));
@@ -40,7 +40,13 @@ TEST(every_documented_option_is_parsed) {
     CHECK_EQ(options.height, 480);
     CHECK(options.headless);
     CHECK(options.dryRun);
+    CHECK(options.realtime);
     CHECK(options.verbose);
+}
+
+TEST(realtime_is_an_off_by_default_flag) {
+    CHECK(!parse({}).realtime);
+    CHECK(parse({"--realtime"}).realtime);
 }
 
 TEST(equals_syntax_is_accepted) {

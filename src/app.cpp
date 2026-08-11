@@ -139,6 +139,12 @@ int App::run(RunSummary* summary) {
     const std::size_t frameLimit =
         options_.benchmark > 0 ? static_cast<std::size_t>(options_.benchmark) : 0;
 
+    // A camera already delivers frames in realtime, so pacing is only useful
+    // for files. A benchmark wants maximum throughput, so it never paces.
+    const bool pacePlayback =
+        options_.realtime && !options_.input.empty() && options_.benchmark == 0;
+    FramePacer pacer(pacePlayback ? source->fps() : 0.0);
+
     while ((frameLimit == 0 || processed < frameLimit) && source->next(frame)) {
         ++frameIndex;
         if (ui) {
@@ -256,6 +262,8 @@ int App::run(RunSummary* summary) {
                 std::fprintf(stderr, "warning: %s\n", saveError.c_str());
             }
         }
+
+        pacer.sleepUntilNextFrame();
     }
 
     if (summary != nullptr) {

@@ -19,6 +19,7 @@ struct Options {
     int benchmark = 0; ///< process this many frames, then report timings and exit
     bool headless = false;
     bool dryRun = false;
+    bool realtime = false; ///< pace file playback to the source frame rate
     bool verbose = false;
     bool help = false;
     bool version = false;
