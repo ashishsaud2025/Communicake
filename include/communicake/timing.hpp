@@ -58,4 +58,27 @@ class Stopwatch {
     TimePoint start_;
 };
 
+/// Paces frame production to a target frame rate, so a video plays back at
+/// realtime speed instead of as fast as the machine can process it.
+class FramePacer {
+  public:
+    using SleepFor = std::function<void(std::chrono::milliseconds)>;
+
+    explicit FramePacer(double targetFps);
+    FramePacer(double targetFps, Stopwatch::Now now, SleepFor sleepFor);
+
+    /// Sleep, if needed, so that frames are spaced by the target period.
+    /// Returns true if the pacer is active (targetFps > 0).
+    bool sleepUntilNextFrame();
+
+    bool active() const;
+
+  private:
+    double periodMs_ = 0.0;
+    Stopwatch watch_;
+    SleepFor sleepFor_;
+    bool active_ = false;
+    bool firstFrame_ = true;
+};
+
 } // namespace communicake

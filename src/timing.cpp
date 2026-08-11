@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <thread>
 
 namespace communicake {
 
@@ -95,6 +96,47 @@ double Stopwatch::lapMs() {
 
 double Stopwatch::elapsedMs() const {
     return std::chrono::duration<double, std::milli>(now_() - start_).count();
+}
+
+FramePacer::FramePacer(double targetFps)
+    : sleepFor_([](std::chrono::milliseconds duration) {
+          std::this_thread::sleep_for(duration);
+      }) {
+    if (targetFps > 0.0) {
+        periodMs_ = 1000.0 / targetFps;
+        active_ = true;
+    }
+}
+
+FramePacer::FramePacer(double targetFps, Stopwatch::Now now, SleepFor sleepFor)
+    : watch_(std::move(now)), sleepFor_(std::move(sleepFor)) {
+    if (targetFps > 0.0) {
+        periodMs_ = 1000.0 / targetFps;
+        active_ = true;
+    }
+}
+
+bool FramePacer::sleepUntilNextFrame() {
+    if (!active_) {
+        return false;
+    }
+    // The first frame establishes the baseline; nothing to pace against yet.
+    if (firstFrame_) {
+        firstFrame_ = false;
+        watch_.lapMs();
+        return true;
+    }
+    const double elapsed = watch_.lapMs();
+    if (elapsed < periodMs_) {
+        const std::chrono::milliseconds sleepFor =
+            std::chrono::milliseconds(static_cast<long long>(periodMs_ - elapsed));
+        sleepFor_(sleepFor);
+    }
+    return true;
+}
+
+bool FramePacer::active() const {
+    return active_;
 }
 
 } // namespace communicake
