@@ -22,6 +22,7 @@ struct StageStats {
 struct RunSummary {
     std::size_t frames = 0;
     std::size_t triggered = 0;
+    std::size_t failed = 0;
     StageStats segment;
     StageStats analyse;
     StageStats frame;

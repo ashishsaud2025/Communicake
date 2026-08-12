@@ -29,4 +29,10 @@ TEST(a_real_command_reports_its_exit_code) {
     CHECK_EQ(runner.lastExitCode(), 0);
 }
 
+TEST(a_failing_command_reports_a_nonzero_exit_code) {
+    ActionRunner runner(false);
+    CHECK(!runner.run("exit 1"));
+    CHECK(runner.lastExitCode() != 0);
+}
+
 TEST_MAIN

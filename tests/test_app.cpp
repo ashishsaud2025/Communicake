@@ -245,6 +245,26 @@ TEST(a_realtime_run_of_an_image_sequence_still_completes) {
     fs::remove_all(directory);
 }
 
+TEST(a_failing_action_is_counted_but_does_not_stop_the_run) {
+    const fs::path directory = buildSequence("communicake_it_failure", 6, 3);
+
+    Options options;
+    options.input = directory.string();
+    options.headless = true;
+
+    AppConfig config = syntheticConfig();
+    config.dryRun = false;
+    config.actions[Gesture::Three] = ActionBinding{"exit 1", {}};
+
+    App app(options, config);
+    RunSummary summary;
+    CHECK_EQ(app.run(&summary), 0);
+    CHECK_EQ(summary.frames, std::size_t(6));
+    CHECK_EQ(summary.triggered, std::size_t(1));
+    CHECK_EQ(summary.failed, std::size_t(1));
+    fs::remove_all(directory);
+}
+
 TEST(a_missing_input_fails_cleanly) {
     Options options;
     options.input = "definitely-not-a-video.mp4";

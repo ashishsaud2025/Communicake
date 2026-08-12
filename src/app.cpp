@@ -125,6 +125,7 @@ int App::run(RunSummary* summary) {
 
     std::size_t processed = 0;
     std::size_t triggered = 0;
+    std::size_t failed = 0;
     double fps = source->fps();
     auto lastFpsUpdate = std::chrono::steady_clock::now();
     int framesSinceUpdate = 0;
@@ -173,9 +174,15 @@ int App::run(RunSummary* summary) {
             const std::string command = commandFor(*event);
             if (!command.empty()) {
                 const std::string expanded = ActionRunner::expand(command, currentPlatform());
-                runner.run(expanded);
+                const bool ok = runner.run(expanded);
                 fired = expanded;
                 ++triggered;
+                if (!ok) {
+                    ++failed;
+                    std::fprintf(stderr,
+                                 "warning: action failed with exit code %d: %s\n",
+                                 runner.lastExitCode(), expanded.c_str());
+                }
                 if (summary != nullptr) {
                     summary->actions.push_back(expanded);
                 }
@@ -269,6 +276,7 @@ int App::run(RunSummary* summary) {
     if (summary != nullptr) {
         summary->frames = processed;
         summary->triggered = triggered;
+        summary->failed = failed;
         summary->segment = summarise(segmentTimes);
         summary->analyse = summarise(analyseTimes);
         summary->frame = summarise(frameTimes);
