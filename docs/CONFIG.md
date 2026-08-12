@@ -20,6 +20,7 @@ communicake --dry-run           # print actions instead of launching them
 | `minFingerGap` | number | 1–5000 | 34 | Two fingertips closer than this are the same finger |
 | `defectDepth` | number | 0–1000 | 18 | Valley depth that separates two fingers |
 | `blurKernel` | number | 3–31, odd | 5 | Gaussian kernel used before subtraction |
+| `morphKernel` | number | 3–31, odd | 5 | Ellipse used to open and close the mask |
 | `roi` | array | `[x, y, w, h]` | `[10, 10, 300, 300]` | Region analysed each frame |
 | `hsvMin` | array | three 0–255 | `[0, 60, 60]` | Lower bound for HSV mode |
 | `hsvMax` | array | three 0–255 | `[25, 255, 255]` | Upper bound for HSV mode |

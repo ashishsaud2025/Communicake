@@ -18,6 +18,7 @@ struct VisionParams {
     int minFingerGap = 34;
     int defectDepth = 18;
     int blurKernel = 5;
+    int morphKernel = 5; ///< ellipse used to open and close the mask; 3..31
     double minConfidence = 0.0; ///< observations below this never reach the stabiliser
     cv::Rect roi{10, 10, 300, 300};
     cv::Scalar hsvMin{0, 60, 60};
@@ -45,10 +46,13 @@ class Segmenter {
     cv::Mat segment(const cv::Mat& roiBgr) const;
 
   private:
+    void rebuildKernel();
+
     VisionParams params_;
     cv::Mat background_; // grayscale, ROI sized
     bool hasBackground_ = false;
     cv::Mat kernel_; // cached morphology element
+    int kernelSize_ = 0;
 
     // Scratch space. Allocating a handful of Mats for every frame was the
     // single largest source of allocator churn in the capture loop.

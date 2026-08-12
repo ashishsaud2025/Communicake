@@ -87,6 +87,7 @@ TEST(a_config_round_trips_through_a_file) {
     AppConfig original = AppConfig::defaults();
     original.vision.binaryThreshold = 33;
     original.vision.minConfidence = 0.4;
+    original.vision.morphKernel = 7;
     original.vision.roi = cv::Rect(4, 5, 200, 210);
     original.stabilizer.requiredFrames = 7;
     original.dryRun = true;
@@ -100,6 +101,7 @@ TEST(a_config_round_trips_through_a_file) {
     CHECK(loaded.has_value());
     CHECK_EQ(loaded->vision.binaryThreshold, 33);
     CHECK_NEAR(loaded->vision.minConfidence, 0.4, 1e-9);
+    CHECK_EQ(loaded->vision.morphKernel, 7);
     CHECK_EQ(loaded->vision.roi, cv::Rect(4, 5, 200, 210));
     CHECK_EQ(loaded->stabilizer.requiredFrames, 7);
     CHECK(loaded->dryRun);
@@ -119,6 +121,22 @@ TEST(a_config_without_a_confidence_floor_keeps_the_default) {
     CHECK(parsed.has_value());
     CHECK_NEAR(parsed->vision.minConfidence, 0.0, 1e-9);
     CHECK_EQ(parsed->vision.binaryThreshold, 12);
+}
+
+TEST(the_morphology_kernel_is_range_checked) {
+    std::string error;
+    const auto tooSmall = AppConfig::fromJson(parse(R"({"vision": {"morphKernel": 1}})"), &error);
+    CHECK(!tooSmall.has_value());
+    CHECK(error.find("morphKernel") != std::string::npos);
+
+    const auto tooLarge = AppConfig::fromJson(parse(R"({"vision": {"morphKernel": 64}})"), &error);
+    CHECK(!tooLarge.has_value());
+}
+
+TEST(the_morphology_kernel_defaults_for_an_old_config) {
+    const auto parsed = AppConfig::fromJson(parse(R"({"vision": {"blurKernel": 7}})"));
+    CHECK(parsed.has_value());
+    CHECK_EQ(parsed->vision.morphKernel, 5);
 }
 
 TEST(a_malformed_file_names_the_path) {

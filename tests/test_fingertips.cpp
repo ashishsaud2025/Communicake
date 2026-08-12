@@ -140,4 +140,16 @@ TEST(the_stage_timings_add_up) {
     CHECK(timings.totalMs > 0.0);
 }
 
+TEST(a_wider_morphology_kernel_keeps_the_fingers_apart) {
+    VisionParams params = testParams();
+    params.morphKernel = 7;
+    HandPipeline pipeline(params);
+    pipeline.setBackground(synthetic::blank());
+    for (int fingers = 0; fingers <= 5; ++fingers) {
+        const communicake::HandObservation observation =
+            pipeline.process(synthetic::makeHand(fingers));
+        CHECK_EQ(observation.fingerCount, fingers);
+    }
+}
+
 TEST_MAIN

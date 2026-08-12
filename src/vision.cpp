@@ -23,11 +23,21 @@ int oddAtLeastThree(int value) {
 } // namespace
 
 Segmenter::Segmenter(const VisionParams& params) : params_(params) {
-    kernel_ = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    rebuildKernel();
 }
 
 void Segmenter::setParams(const VisionParams& params) {
     params_ = params;
+    rebuildKernel();
+}
+
+void Segmenter::rebuildKernel() {
+    const int size = oddAtLeastThree(params_.morphKernel);
+    if (size == kernelSize_ && !kernel_.empty()) {
+        return;
+    }
+    kernelSize_ = size;
+    kernel_ = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(size, size));
 }
 
 const VisionParams& Segmenter::params() const {
