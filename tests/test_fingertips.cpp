@@ -152,4 +152,18 @@ TEST(a_wider_morphology_kernel_keeps_the_fingers_apart) {
     }
 }
 
+TEST(a_hand_clipped_by_the_roi_border_is_rejected) {
+    // Shift a five-finger hand 120 px to the right so the outer fingers run off
+    // the 400x400 ROI. The partial contour must not be reported as a hand.
+    const cv::Mat matrix = (cv::Mat_<double>(2, 3) << 1, 0, 120, 0, 1, 0);
+    cv::Mat shifted;
+    cv::warpAffine(synthetic::makeHand(5), shifted, matrix, synthetic::blank().size());
+
+    HandPipeline pipeline(testParams());
+    pipeline.setBackground(synthetic::blank());
+    const communicake::HandObservation observation = pipeline.process(shifted);
+    CHECK(!observation.valid);
+    CHECK_EQ(observation.fingerCount, 0);
+}
+
 TEST_MAIN

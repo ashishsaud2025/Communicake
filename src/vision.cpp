@@ -20,6 +20,20 @@ int oddAtLeastThree(int value) {
     return v;
 }
 
+/// A contour that reaches the edge of the ROI is a hand cut in half, not a
+/// whole hand. Its fingertips and solidity are meaningless, so the caller
+/// should discard it rather than guess a gesture from it.
+bool touchesBorder(const std::vector<cv::Point>& contour, const cv::Size& size) {
+    constexpr int kMargin = 2;
+    for (const cv::Point& point : contour) {
+        if (point.x <= kMargin || point.y <= kMargin || point.x >= size.width - 1 - kMargin ||
+            point.y >= size.height - 1 - kMargin) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 Segmenter::Segmenter(const VisionParams& params) : params_(params) {
@@ -164,6 +178,9 @@ void HandPipeline::analyse(HandObservation& observation) const {
     }
 
     const std::vector<cv::Point>& contour = contours[static_cast<std::size_t>(index)];
+    if (touchesBorder(contour, mask_.size())) {
+        return;
+    }
     const auto centre = geometry::centroid(contour);
     if (!centre.has_value()) {
         return;
