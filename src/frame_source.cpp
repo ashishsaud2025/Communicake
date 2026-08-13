@@ -126,7 +126,41 @@ bool hasImageExtension(const fs::path& path) {
            extension == ".bmp";
 }
 
+int backendToApi(CameraBackend backend) {
+    switch (backend) {
+        case CameraBackend::DirectShow:
+            return cv::CAP_DSHOW;
+        case CameraBackend::MediaFoundation:
+            return cv::CAP_MSMF;
+        case CameraBackend::V4L2:
+            return cv::CAP_V4L2;
+        case CameraBackend::Auto:
+            break;
+    }
+    return cv::CAP_ANY;
+}
+
 } // namespace
+
+bool parseCameraBackend(const std::string& name, CameraBackend& backend) {
+    if (name.empty() || name == "any" || name == "auto") {
+        backend = CameraBackend::Auto;
+        return true;
+    }
+    if (name == "dshow" || name == "directshow") {
+        backend = CameraBackend::DirectShow;
+        return true;
+    }
+    if (name == "msmf" || name == "mediafoundation") {
+        backend = CameraBackend::MediaFoundation;
+        return true;
+    }
+    if (name == "v4l2") {
+        backend = CameraBackend::V4L2;
+        return true;
+    }
+    return false;
+}
 
 double FrameSource::fps() const {
     return 0.0;
@@ -137,14 +171,18 @@ bool isDirectory(const std::string& path) {
     return !path.empty() && fs::is_directory(path, error);
 }
 
-std::unique_ptr<FrameSource> openWebcam(int index, int width, int height, bool mirror) {
-    cv::VideoCapture capture(index);
-    if (!capture.isOpened()) {
+std::unique_ptr<FrameSource> openWebcam(int index, int width, int height, bool mirror,
+                                        CameraBackend backend) {
+    cv::VideoCapture capture;
+    bool opened = capture.open(index, backendToApi(backend));
 #ifdef _WIN32
-        capture.open(index, cv::CAP_DSHOW);
-#endif
+    if (!opened && backend == CameraBackend::Auto) {
+        // OpenCV prefers Media Foundation on Windows, but some cameras expose
+        // frames only through DirectShow.
+        opened = capture.open(index, cv::CAP_DSHOW);
     }
-    if (!capture.isOpened()) {
+#endif
+    if (!opened || !capture.isOpened()) {
         return nullptr;
     }
     if (width > 0) {

@@ -55,7 +55,9 @@ int App::run(RunSummary* summary) {
                                              : openVideoFile(options_.input);
     } else {
         requested = "camera " + std::to_string(options_.camera);
-        source = openWebcam(options_.camera, options_.width, options_.height);
+        CameraBackend backend = CameraBackend::Auto;
+        parseCameraBackend(options_.cameraBackend, backend);
+        source = openWebcam(options_.camera, options_.width, options_.height, true, backend);
     }
     if (!source) {
         std::fprintf(stderr, "error: cannot open %s\n", requested.c_str());

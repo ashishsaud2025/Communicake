@@ -1,4 +1,5 @@
 #include "communicake/cli.hpp"
+#include "communicake/frame_source.hpp"
 
 #include "test_harness.hpp"
 
@@ -78,6 +79,21 @@ TEST(non_numeric_values_are_rejected) {
     CHECK(!parseArgs({"--camera", "front"}, &error).has_value());
     CHECK(error.find("whole number") != std::string::npos);
     CHECK(!parseArgs({"--width", "-4"}, &error).has_value());
+}
+
+TEST(backend_names_are_validated) {
+    CHECK_EQ(parse({"--backend", "dshow"}).cameraBackend, std::string("dshow"));
+    CHECK_EQ(parse({"--backend=msmf"}).cameraBackend, std::string("msmf"));
+
+    std::string error;
+    CHECK(!parseArgs({"--backend", "telepathy"}, &error).has_value());
+    CHECK(error.find("telepathy") != std::string::npos);
+
+    communicake::CameraBackend backend = communicake::CameraBackend::V4L2;
+    CHECK(communicake::parseCameraBackend("any", backend));
+    CHECK(backend == communicake::CameraBackend::Auto);
+    CHECK(communicake::parseCameraBackend("directshow", backend));
+    CHECK(backend == communicake::CameraBackend::DirectShow);
 }
 
 TEST(a_benchmark_needs_a_positive_frame_count) {

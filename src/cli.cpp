@@ -1,5 +1,7 @@
 #include "communicake/cli.hpp"
 
+#include "communicake/frame_source.hpp"
+
 #include <cstdlib>
 #include <string>
 
@@ -33,6 +35,7 @@ Usage:
 
 Options:
   --camera INDEX     Camera to open (default 0)
+  --backend NAME     Camera backend: any, dshow, msmf or v4l2
   --input PATH       Video file, or a directory of image frames
   --config PATH      JSON configuration (default: config/actions.json)
   --profile PATH     JSON profile with tuned vision settings
@@ -121,7 +124,7 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
                 options.benchmark = number;
             }
         } else if (argument == "--input" || argument == "--config" || argument == "--profile" ||
-                   argument == "--dump-mask" || argument == "--log") {
+                   argument == "--dump-mask" || argument == "--log" || argument == "--backend") {
             std::string value;
             if (!takeValue(value)) {
                 return fail(argument + ": missing value");
@@ -134,6 +137,12 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
                 options.profilePath = value;
             } else if (argument == "--log") {
                 options.logPath = value;
+            } else if (argument == "--backend") {
+                CameraBackend backend = CameraBackend::Auto;
+                if (!parseCameraBackend(value, backend)) {
+                    return fail("--backend: unknown backend \"" + value + "\"");
+                }
+                options.cameraBackend = value;
             } else {
                 options.dumpMaskDir = value;
             }
