@@ -55,3 +55,29 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+
+  sanitizers:
+    name: Linux / ASan + UBSan
+    runs-on: ubuntu-24.04
+    env:
+      CXXFLAGS: -fsanitize=address,undefined -fno-omit-frame-pointer -g
+      LDFLAGS: -fsanitize=address,undefined
+      # OpenCV keeps static state alive past main; that is not our leak to fix.
+      ASAN_OPTIONS: detect_leaks=0:abort_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenCV
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libopencv-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
