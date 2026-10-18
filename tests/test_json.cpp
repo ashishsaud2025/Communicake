@@ -105,4 +105,28 @@ TEST(dump_can_emit_a_single_line) {
     CHECK(text.find('\n') == std::string::npos);
 }
 
+TEST(every_truncated_prefix_is_rejected_without_crashing) {
+    const std::string documents[] = {
+        R"({"vision": {"mode": "hsv", "roi": [1, 2, 300, 400]}, "dryRun": false})",
+        R"([1, -2.5, true, null, "text\n", {"a": 1}])",
+    };
+
+    for (const std::string& document : documents) {
+        for (std::size_t length = 0; length < document.size(); ++length) {
+            const std::string prefix = document.substr(0, length);
+            std::string error;
+            const Value value = parse(prefix, &error);
+            CHECK(!error.empty());
+            CHECK(value.isNull());
+            CHECK(error.find("line ") != std::string::npos);
+            CHECK(error.find("column ") != std::string::npos);
+        }
+
+        // The whole document must still parse, so the loop above is meaningful.
+        std::string error;
+        parse(document, &error);
+        CHECK(error.empty());
+    }
+}
+
 TEST_MAIN
