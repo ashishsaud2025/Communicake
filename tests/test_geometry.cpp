@@ -4,6 +4,8 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include <cstdint>
+
 using communicake::geometry::clampRect;
 using communicake::geometry::centroid;
 using communicake::geometry::largestContourIndex;
@@ -84,6 +86,67 @@ TEST(clamp_rect_never_returns_an_empty_rectangle) {
 
 TEST(clamp_rect_on_an_empty_frame_is_empty) {
     CHECK_EQ(clampRect(cv::Rect(0, 0, 10, 10), cv::Size(0, 0)), cv::Rect());
+}
+
+namespace {
+
+/// Deterministic linear congruential generator. The C++ <random> engines are
+/// implementation defined, and a property test that fails on one platform and
+/// passes on another is worse than the hand-picked cases above.
+class Lcg {
+  public:
+    explicit Lcg(std::uint32_t seed) : state_(seed) {}
+
+    std::uint32_t next() {
+        state_ = state_ * 1664525u + 1013904223u;
+        return state_;
+    }
+
+    /// A value in [low, high], inclusive.
+    int between(int low, int high) {
+        const std::uint32_t span = static_cast<std::uint32_t>(high - low + 1);
+        return low + static_cast<int>(next() % span);
+    }
+
+  private:
+    std::uint32_t state_;
+};
+
+bool contains(const cv::Rect& outer, const cv::Rect& inner) {
+    return inner.x >= outer.x && inner.y >= outer.y &&
+           inner.x + inner.width <= outer.x + outer.width &&
+           inner.y + inner.height <= outer.y + outer.height;
+}
+
+bool inside(const cv::Rect& rect, const cv::Size& frame) {
+    return rect.x >= 0 && rect.y >= 0 && rect.width >= 1 && rect.height >= 1 &&
+           rect.x + rect.width <= frame.width && rect.y + rect.height <= frame.height;
+}
+
+} // namespace
+
+TEST(clamp_rect_holds_its_invariants_for_random_input) {
+    Lcg random(20260101u);
+    for (int iteration = 0; iteration < 2000; ++iteration) {
+        const cv::Size frame(random.between(1, 800), random.between(1, 800));
+        const cv::Rect rect(random.between(-500, 1200), random.between(-500, 1200),
+                            random.between(-200, 1500), random.between(-200, 1500));
+        const cv::Rect clamped = clampRect(rect, frame);
+
+        CHECK(inside(clamped, frame));
+
+        // Clamping may grow a degenerate rectangle to one pixel, but it must
+        // never grow a rectangle that actually intersects the frame.
+        const cv::Rect intersection = rect & cv::Rect(0, 0, frame.width, frame.height);
+        if (!intersection.empty()) {
+            CHECK(contains(rect, clamped));
+            CHECK(contains(clamped, intersection));
+            CHECK_EQ(clamped, intersection);
+        }
+
+        // Clamping an already clamped rectangle must not move it.
+        CHECK_EQ(clampRect(clamped, frame), clamped);
+    }
 }
 
 TEST_MAIN
