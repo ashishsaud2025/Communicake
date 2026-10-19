@@ -153,6 +153,21 @@ TEST(a_malformed_file_names_the_path) {
     std::filesystem::remove(path);
 }
 
+TEST(a_duplicate_key_is_reported_with_its_name) {
+    const auto path = temporaryPath("communicake_config_duplicate.json");
+    {
+        std::ofstream file(path);
+        file << R"({"vision": {"blurKernel": 3}, "vision": {"blurKernel": 7}})";
+    }
+    std::string error;
+    const auto loaded = AppConfig::load(path.string(), &error);
+    CHECK(!loaded.has_value());
+    CHECK(error.find("communicake_config_duplicate.json") != std::string::npos);
+    CHECK(error.find("duplicate key \"vision\"") != std::string::npos);
+
+    std::filesystem::remove(path);
+}
+
 TEST(a_missing_file_is_reported) {
     std::string error;
     const auto loaded = AppConfig::load("definitely-not-here.json", &error);

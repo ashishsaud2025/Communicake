@@ -142,6 +142,12 @@ class Parser {
             if (!parseValue(member, error)) {
                 return false;
             }
+            // A duplicate key is almost always a copy-and-paste mistake, and
+            // silently keeping the last one hides it. Every mainstream JSON
+            // parser this could replace rejects it, so do the same.
+            if (object.has(key)) {
+                return fail(error, "duplicate key \"" + key + "\"");
+            }
             object.set(key, std::move(member));
             skipWhitespace();
             const char next = peek();

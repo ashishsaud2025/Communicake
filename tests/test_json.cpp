@@ -105,6 +105,24 @@ TEST(dump_can_emit_a_single_line) {
     CHECK(text.find('\n') == std::string::npos);
 }
 
+TEST(a_duplicate_key_is_an_error) {
+    std::string error;
+    const Value value = parse(R"({"vision": {"threshold": 10}, "vision": {"threshold": 20}})", &error);
+    CHECK(value.isNull());
+    CHECK(error.find("duplicate key \"vision\"") != std::string::npos);
+
+    error.clear();
+    parse(R"({"a": 1, "b": 2, "a": 3})", &error);
+    CHECK(error.find("duplicate key \"a\"") != std::string::npos);
+}
+
+TEST(keys_that_only_look_alike_are_distinct) {
+    std::string error;
+    const Value value = parse(R"({"Key": 1, "key": 2, "key ": 3})", &error);
+    CHECK(error.empty());
+    CHECK_EQ(value.size(), std::size_t(3));
+}
+
 TEST(every_truncated_prefix_is_rejected_without_crashing) {
     const std::string documents[] = {
         R"({"vision": {"mode": "hsv", "roi": [1, 2, 300, 400]}, "dryRun": false})",

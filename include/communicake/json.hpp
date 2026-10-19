@@ -44,6 +44,8 @@ class Value {
     const Value& operator[](const std::string& key) const;
     const Value& operator[](std::size_t index) const;
 
+    /// Insert or overwrite a member. The parser refuses duplicate keys before
+    /// reaching this, so an overwrite only happens when a caller asks for it.
     void set(const std::string& key, Value value);
     void push(Value value);
 
