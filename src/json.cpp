@@ -252,6 +252,13 @@ class Parser {
                 return true;
             }
             if (c != '\\') {
+                // RFC 8259 forbids unescaped control characters. They usually
+                // arrive from a hand-edited file with a literal tab or newline
+                // in a command string, where the result would be silently
+                // different from what every other JSON reader produces.
+                if (static_cast<unsigned char>(c) < 0x20) {
+                    return fail(error, "unescaped control character in string");
+                }
                 out.push_back(c);
                 continue;
             }

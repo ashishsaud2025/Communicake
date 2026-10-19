@@ -105,6 +105,29 @@ TEST(dump_can_emit_a_single_line) {
     CHECK(text.find('\n') == std::string::npos);
 }
 
+TEST(raw_control_characters_in_strings_are_rejected) {
+    std::string error;
+    parse("{\"command\": \"line\nbreak\"}", &error);
+    CHECK(error.find("control character") != std::string::npos);
+
+    error.clear();
+    parse("{\"command\": \"tab\there\"}", &error);
+    CHECK(error.find("control character") != std::string::npos);
+
+    // The escaped forms must still be accepted.
+    error.clear();
+    const Value value = parse(R"({"command": "line\nbreak\ttab"})", &error);
+    CHECK(error.empty());
+    CHECK_EQ(value["command"].asString(), std::string("line\nbreak\ttab"));
+}
+
+TEST(utf8_text_passes_through_strings) {
+    std::string error;
+    const Value value = parse("{\"name\": \"caf\xC3\xA9 \xE2\x9C\x8B\"}", &error);
+    CHECK(error.empty());
+    CHECK_EQ(value["name"].asString(), std::string("caf\xC3\xA9 \xE2\x9C\x8B"));
+}
+
 TEST(a_duplicate_key_is_an_error) {
     std::string error;
     const Value value = parse(R"({"vision": {"threshold": 10}, "vision": {"threshold": 20}})", &error);
