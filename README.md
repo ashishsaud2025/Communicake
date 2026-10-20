@@ -179,7 +179,8 @@ application and asserts exactly one action fires.
 See [docs/ROADMAP.md](docs/ROADMAP.md). Contributions are welcome;
 [CONTRIBUTING.md](CONTRIBUTING.md) covers the build, the tests and the style.
 When something does not work, [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-starts with the usual causes.
+starts with the usual causes. [CHANGELOG.md](CHANGELOG.md) lists what changed
+in each release.
 
 ## License
 
