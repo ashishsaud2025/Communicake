@@ -56,13 +56,17 @@ Try it without launching anything first:
 | Option | Meaning |
 | --- | --- |
 | `--camera INDEX` | Camera to open (default `0`) |
+| `--backend NAME` | Capture backend: `any`, `dshow`, `msmf` or `v4l2` |
 | `--input PATH` | Video file, or a directory of image frames |
 | `--config PATH` | JSON configuration (default: `config/actions.json` when present) |
 | `--profile PATH` | Tuned vision settings saved with `s` |
-| `--headless` | No windows; prints gestures as they fire |
-| `--dry-run` | Print the action instead of launching it |
+| `--log PATH` | Write a CSV row per frame: frame, hand, fingers, confidence, area, gesture, command |
 | `--dump-mask DIR` | Write the segmentation mask of every frame |
 | `--width`, `--height` | Requested capture size |
+| `--benchmark FRAMES` | Process FRAMES frames, report per-stage timings, exit |
+| `--headless` | No windows; prints gestures as they fire |
+| `--dry-run` | Print the action instead of launching it |
+| `--realtime` | Pace file playback to the file's frame rate instead of running flat out |
 | `-v`, `--verbose` | Print an observation for every frame |
 | `--version`, `-h` | Version, usage |
 
@@ -71,6 +75,21 @@ at a camera:
 
 ```bash
 ./build/communicake --headless --input clip.mp4 --verbose
+```
+
+Two options exist for measuring rather than watching. `--benchmark` reports
+mean, p50, p95 and maximum milliseconds for segmentation, analysis and the whole
+frame after discarding three warm-up frames, and implies `--headless`:
+
+```bash
+./build/communicake --benchmark 300 --input clip.mp4
+```
+
+`--log` records one row per frame for later analysis, which is how thresholds
+in `config/actions.json` are tuned against real recordings:
+
+```bash
+./build/communicake --headless --log observations.csv --input clip.mp4
 ```
 
 ## Interactive controls
