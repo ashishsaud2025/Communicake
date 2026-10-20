@@ -1,6 +1,7 @@
 #include "communicake/cli.hpp"
 
 #include "communicake/frame_source.hpp"
+#include "communicake/version.hpp"
 
 #include <cstdlib>
 #include <string>
@@ -24,7 +25,7 @@ bool parseInt(const std::string& text, int& value) {
 } // namespace
 
 std::string versionString() {
-    return "Communicake 5.0.0";
+    return "Communicake " COMMUNICAKE_VERSION;
 }
 
 std::string usage() {

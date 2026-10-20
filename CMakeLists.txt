@@ -12,6 +12,14 @@ endif()
 
 find_package(OpenCV 4 REQUIRED COMPONENTS core imgproc imgcodecs videoio highgui)
 
+# One source of truth for the version: the project() call above. The generated
+# header lives in the build tree so the source tree never holds a stale copy.
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/communicake/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/communicake/version.hpp
+    @ONLY
+)
+
 # Vision, gesture, configuration and action logic. Deliberately free of windows,
 # cameras and platform shell calls so the tests can drive it directly.
 add_library(communicake_core STATIC
@@ -28,7 +36,8 @@ add_library(communicake_core STATIC
     src/timing.cpp
 )
 
-target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(communicake_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+                                                    ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_link_libraries(communicake_core PUBLIC ${OpenCV_LIBS})
 
 add_library(communicake_app STATIC

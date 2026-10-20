@@ -1,5 +1,6 @@
 #include "communicake/cli.hpp"
 #include "communicake/frame_source.hpp"
+#include "communicake/version.hpp"
 
 #include "test_harness.hpp"
 
@@ -79,6 +80,14 @@ TEST(non_numeric_values_are_rejected) {
     CHECK(!parseArgs({"--camera", "front"}, &error).has_value());
     CHECK(error.find("whole number") != std::string::npos);
     CHECK(!parseArgs({"--width", "-4"}, &error).has_value());
+}
+
+TEST(the_version_comes_from_cmake) {
+    CHECK_EQ(communicake::versionString(), std::string("Communicake " COMMUNICAKE_VERSION));
+    CHECK(communicake::usage().find(COMMUNICAKE_VERSION) != std::string::npos);
+    CHECK_EQ(std::string(COMMUNICAKE_VERSION_MAJOR) + "." + COMMUNICAKE_VERSION_MINOR + "." +
+                 COMMUNICAKE_VERSION_PATCH,
+             std::string(COMMUNICAKE_VERSION));
 }
 
 TEST(backend_names_are_validated) {
