@@ -67,6 +67,7 @@ Try it without launching anything first:
 | `--headless` | No windows; prints gestures as they fire |
 | `--dry-run` | Print the action instead of launching it |
 | `--realtime` | Pace file playback to the file's frame rate instead of running flat out |
+| `--no-mirror` | Do not flip webcam frames left-to-right |
 | `-v`, `--verbose` | Print an observation for every frame |
 | `--version`, `-h` | Version, usage |
 

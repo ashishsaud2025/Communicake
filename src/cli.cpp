@@ -43,6 +43,7 @@ Options:
   --headless         Run without windows; print gestures as they fire
   --dry-run          Print the action instead of launching it
   --realtime         Pace file playback to the source frame rate
+  --no-mirror        Do not flip webcam frames left-to-right
   --dump-mask DIR    Write the segmentation mask of every frame to DIR
   --log PATH         Write one CSV row per processed frame to PATH
   --benchmark FRAMES Process FRAMES frames without windows or actions and
@@ -99,6 +100,8 @@ std::optional<Options> parseArgs(const std::vector<std::string>& arguments, std:
             options.dryRun = true;
         } else if (argument == "--realtime") {
             options.realtime = true;
+        } else if (argument == "--no-mirror") {
+            options.mirror = false;
         } else if (argument == "-v" || argument == "--verbose") {
             options.verbose = true;
         } else if (argument == "--camera" || argument == "--width" || argument == "--height" ||

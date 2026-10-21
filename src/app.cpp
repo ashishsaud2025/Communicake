@@ -57,7 +57,8 @@ int App::run(RunSummary* summary) {
         requested = "camera " + std::to_string(options_.camera);
         CameraBackend backend = CameraBackend::Auto;
         parseCameraBackend(options_.cameraBackend, backend);
-        source = openWebcam(options_.camera, options_.width, options_.height, true, backend);
+        source = openWebcam(options_.camera, options_.width, options_.height, options_.mirror,
+                            backend);
     }
     if (!source) {
         std::fprintf(stderr, "error: cannot open %s\n", requested.c_str());

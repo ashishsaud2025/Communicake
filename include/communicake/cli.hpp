@@ -21,6 +21,7 @@ struct Options {
     bool headless = false;
     bool dryRun = false;
     bool realtime = false; ///< pace file playback to the source frame rate
+    bool mirror = true; ///< flip webcam frames left-to-right, like a mirror
     bool verbose = false;
     bool help = false;
     bool version = false;

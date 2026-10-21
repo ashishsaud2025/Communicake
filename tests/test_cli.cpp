@@ -51,6 +51,12 @@ TEST(realtime_is_an_off_by_default_flag) {
     CHECK(parse({"--realtime"}).realtime);
 }
 
+TEST(the_webcam_mirror_can_be_disabled) {
+    CHECK(parse({}).mirror);
+    CHECK(!parse({"--no-mirror"}).mirror);
+    CHECK(communicake::usage().find("--no-mirror") != std::string::npos);
+}
+
 TEST(equals_syntax_is_accepted) {
     const Options options = parse({"--camera=1", "--width=1280"});
     CHECK_EQ(options.camera, 1);
