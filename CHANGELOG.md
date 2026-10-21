@@ -6,7 +6,11 @@ All notable changes to Communike are recorded here. The format follows
 
 ## [Unreleased]
 
-Planned as 5.1.0. Everything below is on `main` and passes the test suite.
+Nothing yet.
+
+## [5.1.0] - 2026-10-21
+
+Measurements, tuning knobs and the first real CI.
 
 ### Added
 
