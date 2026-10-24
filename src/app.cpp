@@ -30,6 +30,18 @@ StageStats summarise(const RollingStats& samples) {
 
 } // namespace
 
+std::string formatRunSummary(const RunSummary& summary) {
+    const auto count = [](std::size_t value, const char* singular, const char* plural) {
+        return std::to_string(value) + " " + (value == 1 ? singular : plural);
+    };
+    std::string line = "processed " + count(summary.frames, "frame", "frames") + ", triggered " +
+                       count(summary.triggered, "action", "actions");
+    if (summary.failed > 0) {
+        line += ", " + std::to_string(summary.failed) + " failed";
+    }
+    return line;
+}
+
 App::App(Options options, AppConfig config) : options_(std::move(options)), config_(std::move(config)) {}
 
 std::string App::commandFor(Gesture gesture) const {
@@ -129,6 +141,7 @@ int App::run(RunSummary* summary) {
     std::size_t processed = 0;
     std::size_t triggered = 0;
     std::size_t failed = 0;
+    std::vector<std::string> firedActions;
     double fps = source->fps();
     auto lastFpsUpdate = std::chrono::steady_clock::now();
     int framesSinceUpdate = 0;
@@ -186,9 +199,7 @@ int App::run(RunSummary* summary) {
                                  "warning: action failed with exit code %d: %s\n",
                                  runner.lastExitCode(), expanded.c_str());
                 }
-                if (summary != nullptr) {
-                    summary->actions.push_back(expanded);
-                }
+                firedActions.push_back(expanded);
                 if (options_.headless || options_.verbose) {
                     std::printf("[%5zu] %-5s fingers=%d confidence=%.2f  ->  %s\n", frameIndex,
                                 gestureName(*event), observation.fingerCount,
@@ -276,13 +287,16 @@ int App::run(RunSummary* summary) {
         pacer.sleepUntilNextFrame();
     }
 
+    RunSummary result;
+    result.frames = processed;
+    result.triggered = triggered;
+    result.failed = failed;
+    result.actions = std::move(firedActions);
+    result.segment = summarise(segmentTimes);
+    result.analyse = summarise(analyseTimes);
+    result.frame = summarise(frameTimes);
     if (summary != nullptr) {
-        summary->frames = processed;
-        summary->triggered = triggered;
-        summary->failed = failed;
-        summary->segment = summarise(segmentTimes);
-        summary->analyse = summarise(analyseTimes);
-        summary->frame = summarise(frameTimes);
+        *summary = result;
     }
     if (options_.benchmark > 0) {
         const StageStats total = summarise(frameTimes);
@@ -298,7 +312,7 @@ int App::run(RunSummary* summary) {
             std::printf("  ceiling %.1f fps (mean total per frame)\n", 1000.0 / total.meanMs);
         }
     } else if (options_.headless) {
-        std::printf("processed %zu frames, triggered %zu actions\n", processed, triggered);
+        std::printf("%s\n", formatRunSummary(result).c_str());
     }
     return 0;
 }

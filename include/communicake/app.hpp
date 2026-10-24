@@ -29,6 +29,11 @@ struct RunSummary {
     std::vector<std::string> actions;
 };
 
+/// One line describing a finished run, e.g. "processed 120 frames, triggered 2
+/// actions, 1 failed". Kept out of App::run so the wording is covered by tests
+/// instead of by scraping stdout.
+std::string formatRunSummary(const RunSummary& summary);
+
 /// Wires a frame source, the pipeline, the stabiliser and the action runner
 /// together. Interactive and headless runs share the same loop.
 class App {

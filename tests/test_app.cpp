@@ -262,7 +262,32 @@ TEST(a_failing_action_is_counted_but_does_not_stop_the_run) {
     CHECK_EQ(summary.frames, std::size_t(6));
     CHECK_EQ(summary.triggered, std::size_t(1));
     CHECK_EQ(summary.failed, std::size_t(1));
+
+    const std::string line = communicake::formatRunSummary(summary);
+    CHECK(line.find("processed 6 frames") != std::string::npos);
+    CHECK(line.find("triggered 1 action") != std::string::npos);
+    CHECK(line.find("1 failed") != std::string::npos);
     fs::remove_all(directory);
+}
+
+TEST(the_run_summary_line_is_readable_and_counts_failures) {
+    RunSummary quiet;
+    quiet.frames = 120;
+    CHECK_EQ(communicake::formatRunSummary(quiet),
+             std::string("processed 120 frames, triggered 0 actions"));
+
+    RunSummary one;
+    one.frames = 1;
+    one.triggered = 1;
+    CHECK_EQ(communicake::formatRunSummary(one),
+             std::string("processed 1 frame, triggered 1 action"));
+
+    RunSummary broken;
+    broken.frames = 2;
+    broken.triggered = 3;
+    broken.failed = 2;
+    CHECK_EQ(communicake::formatRunSummary(broken),
+             std::string("processed 2 frames, triggered 3 actions, 2 failed"));
 }
 
 TEST(a_missing_input_fails_cleanly) {
