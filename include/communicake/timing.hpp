@@ -58,6 +58,11 @@ class Stopwatch {
     TimePoint start_;
 };
 
+/// The frame period to pace at, or 0 when the rate is not credible. Rates
+/// outside 1–1000 fps come from broken container metadata (a "0.001 fps" clip
+/// would otherwise sleep for minutes per frame), and are ignored.
+double pacingPeriodMs(double fps);
+
 /// Paces frame production to a target frame rate, so a video plays back at
 /// realtime speed instead of as fast as the machine can process it.
 class FramePacer {
@@ -68,7 +73,7 @@ class FramePacer {
     FramePacer(double targetFps, Stopwatch::Now now, SleepFor sleepFor);
 
     /// Sleep, if needed, so that frames are spaced by the target period.
-    /// Returns true if the pacer is active (targetFps > 0).
+    /// Returns true if the pacer is active (the rate was credible).
     bool sleepUntilNextFrame();
 
     bool active() const;

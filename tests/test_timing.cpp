@@ -3,6 +3,7 @@
 #include "test_harness.hpp"
 
 #include <chrono>
+#include <cmath>
 
 using communicake::RollingStats;
 using communicake::Stopwatch;
@@ -79,6 +80,26 @@ TEST(a_pacer_with_no_fps_is_inactive) {
     FramePacer pacer(0.0);
     CHECK(!pacer.active());
     CHECK(!pacer.sleepUntilNextFrame());
+}
+
+TEST(implausible_frame_rates_are_not_paced) {
+    using communicake::pacingPeriodMs;
+    CHECK_NEAR(pacingPeriodMs(0.0), 0.0, 1e-9);
+    CHECK_NEAR(pacingPeriodMs(0.001), 0.0, 1e-9); // a broken container, not a slow one
+    CHECK_NEAR(pacingPeriodMs(-30.0), 0.0, 1e-9);
+    CHECK_NEAR(pacingPeriodMs(1000.5), 0.0, 1e-9);
+    CHECK_NEAR(pacingPeriodMs(std::nan("")), 0.0, 1e-9); // NaN compares false, so it is rejected
+    CHECK_NEAR(pacingPeriodMs(1.0), 1000.0, 1e-9);
+    CHECK_NEAR(pacingPeriodMs(25.0), 40.0, 1e-9);
+    CHECK_NEAR(pacingPeriodMs(1000.0), 1.0, 1e-9);
+
+    // A pacer built from a broken rate must not hang the run.
+    FramePacer broken(0.001);
+    CHECK(!broken.active());
+    CHECK(!broken.sleepUntilNextFrame());
+
+    FramePacer slowButReal(1.0);
+    CHECK(slowButReal.active());
 }
 
 TEST(a_pacer_sleeps_the_remainder_of_the_period) {

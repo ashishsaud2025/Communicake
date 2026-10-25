@@ -98,22 +98,30 @@ double Stopwatch::elapsedMs() const {
     return std::chrono::duration<double, std::milli>(now_() - start_).count();
 }
 
+double pacingPeriodMs(double fps) {
+    // A container that claims 0.001 fps is broken, not slow: pacing it would
+    // sleep for seventeen minutes per frame. Above 1000 fps there is nothing
+    // left to pace. The comparison also rejects NaN.
+    constexpr double kMinimumFps = 1.0;
+    constexpr double kMaximumFps = 1000.0;
+    if (!(fps >= kMinimumFps && fps <= kMaximumFps)) {
+        return 0.0;
+    }
+    return 1000.0 / fps;
+}
+
 FramePacer::FramePacer(double targetFps)
     : sleepFor_([](std::chrono::milliseconds duration) {
           std::this_thread::sleep_for(duration);
       }) {
-    if (targetFps > 0.0) {
-        periodMs_ = 1000.0 / targetFps;
-        active_ = true;
-    }
+    periodMs_ = pacingPeriodMs(targetFps);
+    active_ = periodMs_ > 0.0;
 }
 
 FramePacer::FramePacer(double targetFps, Stopwatch::Now now, SleepFor sleepFor)
     : watch_(std::move(now)), sleepFor_(std::move(sleepFor)) {
-    if (targetFps > 0.0) {
-        periodMs_ = 1000.0 / targetFps;
-        active_ = true;
-    }
+    periodMs_ = pacingPeriodMs(targetFps);
+    active_ = periodMs_ > 0.0;
 }
 
 bool FramePacer::sleepUntilNextFrame() {
