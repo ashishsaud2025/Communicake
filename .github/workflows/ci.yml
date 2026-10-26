@@ -5,6 +5,13 @@ on:
     branches: [main, master]
   pull_request:
 
+# Pushing twice to a pull request leaves the first run pointless; cancel it.
+# Runs for a branch push are left alone: a green main build is the record that
+# a release is cut from, so it should finish even if another push lands.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   linux:
     name: Linux / GCC
