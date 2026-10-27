@@ -6,7 +6,16 @@ All notable changes to Communike are recorded here. The format follows
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- The headless run summary now names the actions that failed, and its wording is
+  covered by tests instead of being assembled inline.
+
+### Changed
+
+- A frame rate outside 1–1000 fps is treated as broken metadata and pacing is
+  disabled, instead of sleeping for minutes per frame.
+- CI cancels superseded pull request runs; branch pushes always finish.
 
 ## [5.1.0] - 2026-10-21
 

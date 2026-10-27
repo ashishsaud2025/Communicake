@@ -29,6 +29,22 @@ communicake --dry-run           # print actions instead of launching them
 The ROI is clamped to the frame, so a size larger than the camera cannot crash
 the pipeline.
 
+## The webcam mirror and the ROI
+
+Webcam frames are flipped left to right before the pipeline sees them, so moving
+your hand to the right moves it to the right on screen. Everything downstream is
+expressed in that flipped image: `vision.roi` and the fingertip points drawn in
+the overlay.
+
+`--no-mirror` turns the flip off. That changes what `roi` means: a region tuned
+on the left of the mirrored picture covers the right of the unmirrored one. Retune
+it, or mirror the `x` component yourself with
+`x' = frameWidth - (x + w)`.
+
+Video files and image sequences are never mirrored. There is nothing to flip:
+the frames were recorded once and are replayed as they are, so a profile tuned
+on a webcam may need a different ROI for a recording.
+
 ## `stabilizer`
 
 | Key | Type | Range | Default | Meaning |
